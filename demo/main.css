@@ -1,0 +1,39 @@
+@CHARSET "UTF-8";
+
+#header{
+	background-color:#ddd;
+	margin-bottom:20px;
+	padding-left:15px;
+}
+#content {
+	margin-right:15px;
+	margin-left:15px;
+	
+}
+.smallType{
+	font-size:10px;
+}
+.paragraph {
+	background-color:#eee;
+}
+#footer{
+	background-color:#ccc;
+}
+
+label {
+	font-size:14px;
+}
+
+.label {
+	
+}
+
+.left {
+	float:left;
+}
+
+.right {
+	float:right;
+}
+
+

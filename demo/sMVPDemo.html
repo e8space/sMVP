@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		
+		<link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+		<link rel="stylesheet" href="bootstrap-theme.min.css">
+		<link rel="stylesheet" href="main.css">
+		
+		<script src="libs/underscore-min.js"></script>
+		<script src="libs/jquery-1.11.2.min.js"></script>
+		<script src="libs/bootstrap.min.js"></script>
+		
+		<script src="libs/smvp.js"></script>
+		<script src="model/mainModels.js"></script>
+		<script src="presenter/headerPresenter.js"></script>
+		<script src="mockData.js"></script>
+		<script src="init.js"></script>
+		
+		<title>sMVPdemo</title>
+	</head>
+
+	<body>
+		<div id="header" class="row"> </div>
+		<div id="content" class="row"> </div>
+		<div id="footer" class="row"> </div>
+	</body>
+	
+
+<!-- TEMPLATES -->
+
+	<!-- headerViewTemplate -->
+	<script type="text/x-template" id="headerViewTemplate">
+		<div id="headerTextContainer" class="col-md-12"></div>
+	</script>
+	
+	<!-- headerTextTemplate -->
+	<script type="text/x-template" id="headerTextTemplate">
+		<h2 class="text-left"><%=getData()%></h2>
+	</script>
+	
+	<!-- contentViewTemplate -->
+	<script type="text/x-template" id="contentViewTemplate">
+		<div id="contentStockContainer" class="col-md-6"></div>	
+		<div id="contentFormContainer" class="col-md-6"></div>
+	</script>
+	
+	<!-- contentFormTemplate -->
+	<script type="text/x-template" id="contentFormTemplate">	
+		<form id="contentForm" class="form-horizontal" data-event="change" data-id="contentForm">
+			<h3 class="col-xs-12 paragraph" >new user</h3>
+			<%for (property in getData().getMutable()){%>
+				<div class="form-group-xs">
+					<label class="col-xs-3" ><%=property%>:</label>
+					 <div class="col-xs-9">
+						<input id="<%=property%>" class="form-control input-sm" type ="text" placeholder="your <%=property%> here:"><br>
+					</div>
+				</div>
+			<%}%>
+			<div id="submitButtonContainer"></div>
+		</form>
+	</script>
+	
+	<!-- contentStockTemplate -->
+	<script type="text/x-template" id="contentStockTemplate">
+		<h3 class="col-xs-12 paragraph">users</h3>
+		
+		<table class="table table-striped table-bordered">
+		 	<thead>
+		 		<tr>
+					<%$.each(getData().getCollection(),function(key,value){%>
+						<%$.each(this, function(key,value){%>
+							<th><%=key%></th>
+						<%})%>
+						<%return (false)%>
+					<%})%>
+				</tr>
+			</thead>
+			<tbody>
+				<%$.each(getData().getCollection(),function(key,value){%>
+					<tr>
+						<%$.each(this, function(key,value){%>	
+							<td><%=value%></td>
+						<%})%>
+					</tr>
+				<%})%>
+			</tbody>
+		</table>
+	</script>
+	
+	<!-- submitButtonTemplate -->
+	<script type="text/x-template" id="submitButtonTemplate">
+		<div class="form-group-xs">
+        	<div class="col-xs-offset-0 col-xs-12">
+            	<button  id="<%=getId()%>" data-event="click" type="button" class="btn btn-default btn-xs">submit</button>
+        	</div>
+    	</div>
+	</script>
+	
+</html>
