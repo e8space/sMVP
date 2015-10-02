@@ -120,7 +120,7 @@ var SMVP = (function(){
 									self.setGettersSetters(obj);
 								}
 							});
-							$(document).trigger({"modelChanged":this})
+							$(document).trigger("modelChanged", {model:this})
 							return this;
 						} catch (e){
 			                console.log(e);
