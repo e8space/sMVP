@@ -1,5 +1,5 @@
 /**
- * sMv Model unit tests
+ * sMvp Model unit tests
  * (c) 2015 mk
  */
 
@@ -10,23 +10,21 @@ Model_test = TestCase("Model_test");
  * setUp
  */
 Model_test.prototype.setUp = function(){
-	model = new Model({
-		id:"",
-		name:"",
-		value:""
-	});	
 	
-	user3 = new Model({id:"user3", urlRoot:"/user"});
-	user4 = new Model({id:"user4", urlRoot:"/user"});
-	newUser = new Model({name:"Brian", urlRoot:"/user"});
+	SMVP.setDataGateway(new SMVP.DataGatewayMock());
+	
+	SMVP.userModel = new SMVP.Model({
+		urlRoot : "/user",
+		id : "",
+		name : ""
+	});
 };
 
 /**
  * tearDown
  */
 Model_test.prototype.tearDown = function(){
-	model = null;
-	user = null;
+	SMVP.userModel = null;
 };
 
 /**
@@ -34,7 +32,7 @@ Model_test.prototype.tearDown = function(){
  */
 Model_test.prototype.test_create = function(){
 	var expected = typeof {};
-	var actual = typeof model;
+	var actual = typeof SMVP.userModel;
 	assertEquals(expected,actual);
 };
 
@@ -43,10 +41,10 @@ Model_test.prototype.test_create = function(){
  */
 Model_test.prototype.test_clone = function(){
 	var expected ="Henry";
-	model.setName("Henry");
-	var modelClone = model.clone();
+	SMVP.userModel.setName("Henry");
+	var modelClone = SMVP.userModel.clone();
 	modelClone.setName("George");
-	assertEquals(expected, model.getName());
+	assertEquals(expected, SMVP.userModel.getName());
 };
 
 /**
@@ -54,7 +52,7 @@ Model_test.prototype.test_clone = function(){
  */
 Model_test.prototype.test_getObjectRepresentation = function(){
 	var expected = typeof {};
-	var actual = typeof model.getObjectRepresentation();
+	var actual = typeof SMVP.userModel.getObjectRepresentation();
 	assertEquals(expected, actual);
 };
 
@@ -63,8 +61,8 @@ Model_test.prototype.test_getObjectRepresentation = function(){
  */
 Model_test.prototype.test_setObjectRepresentation = function(){
 	var expected = "Lukas";
-	model.setObjectRepresentation({name:"Lukas"});
-	var actual = model.getName();
+	SMVP.userModel.setObjectRepresentation({name:"Lukas"});
+	var actual = SMVP.userModel.getName();
 	assertEquals(expected,actual);
 };
 
@@ -73,8 +71,8 @@ Model_test.prototype.test_setObjectRepresentation = function(){
  */
 Model_test.prototype.test_getJsonRepresentation = function(){
 	var expected = "Betty";
-	model.setName("Betty");
-	var object = JSON.parse(model.getJsonRepresentation());
+	SMVP.userModel.setName("Betty");
+	var object = JSON.parse(SMVP.userModel.getJsonRepresentation());
 	assertEquals(expected, object.name);
 };
 
@@ -84,8 +82,8 @@ Model_test.prototype.test_getJsonRepresentation = function(){
 Model_test.prototype.test_setJsonRepresentation = function(){
 	var expected = "Monroe";
 	var jsonRep = '{"name":"Monroe"}';
-	model.setJsonRepresentation(jsonRep);
-	var actual = model.getName();
+	SMVP.userModel.setJsonRepresentation(jsonRep);
+	var actual = SMVP.userModel.getName();
 	assertEquals(expected, actual);
 };
 
@@ -94,32 +92,8 @@ Model_test.prototype.test_setJsonRepresentation = function(){
  */
 Model_test.prototype.test_post_should_return_model_with_id = function(){
 	var expected = "user6";
-	var actual = newUser.post().getId();
+	var actual = SMVP.userModel.post();
 	assertEquals(expected,actual);
 };
 
-/**
- * fetch
- */
-Model_test.prototype.test_fetch_should_return_model = function(){
-	var expected = "Dana";
-	var actual = user4.fetch().getName();
-	assertEquals(expected,actual);	
-};
 
-/**
- * update
- */
-Model_test.prototype.test_update_should_return_model = function(){
-	var expected ="Obi van";
-	var actual = user4.fetch().setName("Obi van").update().fetch().getName();
-	assertEquals(expected,actual);
-	
-};
-
-/**
- * delete
- */
-Model_test.prototype.test_delete_should_return_model = function(){
-	assertTrue(user4.destroy());
-};

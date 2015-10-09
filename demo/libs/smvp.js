@@ -111,17 +111,18 @@ var SMVP = (function(){
 			        post: function(){
 						try {
 							var self = this;
-							var extendedProperties= _dataGateway.postModel(this.getData().getObjectRepresentation());
-							jQuery.extend(self.properties, extendedProperties);
-							$.each(extendedProperties, function(key,value){
-								if(typeof self["get"+key.ucfirst()] == 'undefined') {
-									var obj = {};
-									obj[key] = value;
-									self.setGettersSetters(obj);
-								}
+							_dataGateway.postModel(this.getData().getObjectRepresentation(), function(extendedProperties){
+								jQuery.extend(self.properties, extendedProperties);
+								$.each(extendedProperties, function(key,value){
+									if(typeof self["get"+key.ucfirst()] == 'undefined') {
+										var obj = {};
+										obj[key] = value;
+										self.setGettersSetters(obj);
+									}
+								});
+								$(document).trigger("modelChanged_"+this.getId(), {model:this})
+								return this;
 							});
-							$(document).trigger("modelChanged", {model:this})
-							return this;
 						} catch (e){
 			                console.log(e);
 						}
@@ -133,8 +134,11 @@ var SMVP = (function(){
 			         */
 			        fetch : function(){
 			        	try {
-			        		this.setGettersSetters(SMVP.dataGateway.fetchModel(this.getObjectRepresentation()));
-			        		return this;
+			        		var self = this;
+			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(model){
+			        			self.setGettersSetters(model);
+			        			return this;
+			        		});
 			        	} catch (e){
 			        		console.log(e);
 			        	}
@@ -146,8 +150,10 @@ var SMVP = (function(){
 			         */
 					update : function(){
 			            try {
-			            	SMVP.dataGateway.updateModel(this.getObjectRepresentation());
-			                return this;
+			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(model){
+			            		$(document).trigger("modelChanged_"+this.getId(), {model:this})
+				                return this;
+			            	});
 			            } catch (e){
 			                console.log(e);
 			            }
@@ -159,7 +165,9 @@ var SMVP = (function(){
 			         */
 					destroy : function(){
 						try {
-							return SMVP.dataGateway.deleteModel(this.getObjectRepresentation());
+							_dataGateway.deleteModel(this.getObjectRepresentation(),function(isModelDestroyed){
+								return isModelDestroyed;
+							});
 						} catch (e) {
 			                console.log(e); 
 						}
@@ -394,71 +402,73 @@ var SMVP = (function(){
 					 * @hint post model
 					 * @param model
 					 */
-					this.postModel = function(model){
+					this.postModel = function(model,callback){
 						var resource = model.urlRoot.split('/')[1];
 						var id = resource+(Object.keys(mockData[resource]).length+1);
 						
 						model.id = id;
 						model.link = model.urlRoot+"/"+id;
 						mockData[resource][id]=model;
-						return mockData[resource][id];
+						callback(mockData[resource][id]);
 					};
 					
 					/**
 					 * @fetch model
 					 * @param model
 					 */
-					this.fetchModel = function(model){
+					this.fetchModel = function(model,callback){
 						var resource = model.urlRoot.split('/')[1];
-						return mockData[resource][model.id];
+						callback(mockData[resource][model.id]);
 					};
 					
 					/**
 					 * @hint update model
 					 * @param model
 					 */
-					this.updateModel = function(model){
+					this.updateModel = function(model,callback){
 						var resource = model.urlRoot.split('/')[1];
 						var id = model.id;
 						mockData[resource][id] = model;
-						return mockData[resource][id];
+						callback (mockData[resource][id]);
 					};
 					
 					/**
 					 * @hint delete model
 					 * @param model
 					 */
-					this.deleteModel = function(model){
+					this.deleteModel = function(model,callback){
 						var resource = model.urlRoot.split('/')[1];
 						var id = model.id;
 						delete mockData[resource][id];
-						return true;
+						callback(true);
 					};
 					
 					/**
 					 * @hint post collection
 					 * @param collection
 					 */
-					this.postCollection = function(collection){
+					this.postCollection = function(collection, callback){
 						$.each(collection.getCollection(), function(key,value){
 							mockData[collection.getUrlRoot()][key]= value;
 						});
+						callback(true);
 					};
 					
 					/**
 					 * @hint fetch collection
 					 * @param collection
 					 */
-					this.fetchCollection = function(collection) {
-						return mockData[collection.getUrlRoot()];
+					this.fetchCollection = function(collection, callback) {
+						callback(mockData[collection.getUrlRoot()]);
 					};
 					
 					/**
 					 * @hint delete collection
 					 * @param collection
 					 */
-					this.deleteCollection = function(collection){
+					this.deleteCollection = function(collection,callback){
 						delete mockData[collection.getUrlRoot()];
+						callback(true);
 					};
 				}
 				
@@ -480,6 +490,10 @@ var SMVP = (function(){
 					var _collection = {};
 					var _models = {};
 					var _keys = Object.keys(model.getObjectRepresentation()).sort();
+					
+					$(document).bind("modelPosted", function(o,data){
+						console.log("mockData", mockData);
+					})
 					
 					/**
 					 * @hint add model

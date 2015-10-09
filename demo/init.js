@@ -23,8 +23,5 @@ $(document).ready(function() {
 		this.getSubTriads().contentFormPresenter.getModel().post();
 		console.log(this.getSubTriads().contentFormPresenter.getModel().getMutable());
 	}
-
-	
-
 });
 
