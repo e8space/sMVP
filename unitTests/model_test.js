@@ -94,6 +94,7 @@ Model_test.prototype.test_post_should_return_model_with_id = function(){
 	var expected = "user6";
 	SMVP.userModel.post(function(actual){
 		assertEquals(expected,actual.getId());
+		actual.destroy();
 	});
 };
 

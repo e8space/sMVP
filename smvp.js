@@ -113,7 +113,6 @@ var SMVP = (function(){
 						try {
 							var self = this;
 							_dataGateway.postModel(this.getObjectRepresentation(), function(jsonProps){
-								
 								jQuery.extend(self.properties, jsonProps);
 								$.each(jsonProps, function(key,value){
 									if(typeof self["get"+key.ucfirst()] == 'undefined') {
@@ -124,7 +123,7 @@ var SMVP = (function(){
 									self["set"+key.ucfirst()](value);
 								});
 								$(document).trigger("modelChanged_"+self.getId(), {model:self});
-								callback(self);
+								typeof callback!= 'undefined' ? callback (self) : false;
 							});
 						} catch (e){
 			                console.log(e);
