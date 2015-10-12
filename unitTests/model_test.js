@@ -92,8 +92,9 @@ Model_test.prototype.test_setJsonRepresentation = function(){
  */
 Model_test.prototype.test_post_should_return_model_with_id = function(){
 	var expected = "user6";
-	var actual = SMVP.userModel.post();
-	assertEquals(expected,actual);
+	SMVP.userModel.post(function(actual){
+		assertEquals(expected,actual.getId());
+	});
 };
 
 

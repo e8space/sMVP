@@ -109,21 +109,22 @@ var SMVP = (function(){
 			         * @hint post model
 			         * @returns {Model}
 			         */
-			        post: function(){
+			        post: function(callback){
 						try {
 							var self = this;
-							_dataGateway.postModel(this.getObjectRepresentation(), function(extendedProperties){
-								jQuery.extend(self.properties, extendedProperties);
-								$.each(extendedProperties, function(key,value){
+							_dataGateway.postModel(this.getObjectRepresentation(), function(jsonProps){
+								
+								jQuery.extend(self.properties, jsonProps);
+								$.each(jsonProps, function(key,value){
 									if(typeof self["get"+key.ucfirst()] == 'undefined') {
 										var obj = {};
 										obj[key] = value;
 										self.setGettersSetters(obj);
 									}
+									self["set"+key.ucfirst()](value);
 								});
-								$(document).trigger("modelChanged_"+self.getId(), {model:self})
-								console.log("post");
-								return self;
+								$(document).trigger("modelChanged_"+self.getId(), {model:self});
+								callback(self);
 							});
 						} catch (e){
 			                console.log(e);
