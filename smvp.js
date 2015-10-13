@@ -1,7 +1,7 @@
 /**
  * SMVP 1.0
  * MVP framework
- * 2014 mk
+ * 2015 mk
  */
 
 var SMVP = (function(){
@@ -9,18 +9,17 @@ var SMVP = (function(){
 	var _dataGateway = null;
 	String.prototype.ucfirst = function(){
 		return this.charAt(0).toUpperCase() + this.substr(1);
-	};
-	//new Helper();
+	};	
 	
 	var API = {
-			/**
-			 * Model
-			 */
 			
 			setDataGateway : function(dataGateway){
 				_dataGateway = dataGateway;
 			},
 			
+			/**
+			 * Model
+			 */
 			Model : (function(){
 				
 				/**
@@ -32,7 +31,7 @@ var SMVP = (function(){
 					var self =this;
 			        this.properties	= properties || {};
 
-					//define getter and setter according to properties
+					//define accessors according to properties
 					this.setGettersSetters = function(data){
 					
 						jQuery.extend(self.properties, data);
@@ -50,6 +49,20 @@ var SMVP = (function(){
 							
 						})();}
 					};
+					
+					//update properties and accessors according to json
+					this.updatePropertiesAndAccessors = function(json){
+						jQuery.extend(self.properties, json);
+	        			$.each(json, function(key,value){
+							if(typeof self["get"+key.ucfirst()] == 'undefined') {
+								var obj = {};
+								obj[key] = value;
+								self.setGettersSetters(obj);
+							}
+							self["set"+key.ucfirst()](value);
+						});
+					}
+					
 			        this.setGettersSetters(self.properties);
 				};
 				
@@ -112,16 +125,8 @@ var SMVP = (function(){
 			        post: function(callback){
 						try {
 							var self = this;
-							_dataGateway.postModel(this.getObjectRepresentation(), function(jsonProps){
-								jQuery.extend(self.properties, jsonProps);
-								$.each(jsonProps, function(key,value){
-									if(typeof self["get"+key.ucfirst()] == 'undefined') {
-										var obj = {};
-										obj[key] = value;
-										self.setGettersSetters(obj);
-									}
-									self["set"+key.ucfirst()](value);
-								});
+							_dataGateway.postModel(this.getObjectRepresentation(), function(json){
+								self.updatePropertiesAndAccessors(json);
 								$(document).trigger("modelChanged_"+self.getId(), {model:self});
 								typeof callback!= 'undefined' ? callback (self) : false;
 							});
@@ -134,12 +139,12 @@ var SMVP = (function(){
 			         * @hint fetch model
 			         * @returns {Model}
 			         */
-			        fetch : function(){
+			        fetch : function(callback){
 			        	try {
 			        		var self = this;
-			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(model){
-			        			self.setGettersSetters(model);
-			        			return this;
+			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(json){
+			        			self.updatePropertiesAndAccessors(json);
+			        			typeof callback!= 'undefined' ? callback (self) : false;
 			        		});
 			        	} catch (e){
 			        		console.log(e);
@@ -150,11 +155,12 @@ var SMVP = (function(){
 			         * @hint update model
 			         * @returns {Model}
 			         */
-					update : function(){
+					update : function(callback){
 			            try {
-			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(model){
-			            		$(document).trigger("modelChanged_"+this.getId(), {model:this})
-				                return this;
+			            	var self = this;
+			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(response){
+			            		$(document).trigger("modelChanged_"+self.getId(), {model:self});
+			            		typeof callback!= 'undefined' ? callback (self) : false;
 			            	});
 			            } catch (e){
 			                console.log(e);
@@ -178,6 +184,7 @@ var SMVP = (function(){
 				
 				return Model;
 			})(),
+			
 			/**
 			 * View
 			 */
@@ -204,7 +211,7 @@ var SMVP = (function(){
 						return _model;
 					}; 
 					
-					 $(_container).empty();
+					$(_container).empty();
 			    }
 				    
 				//public 
@@ -251,12 +258,10 @@ var SMVP = (function(){
 			    return View;
 			})(),
 
-			
 			/**
 			 * Presenter
 			 */
 			Presenter : (function(){
-				
 				
 				/**
 				 * @constructor
@@ -431,7 +436,7 @@ var SMVP = (function(){
 						var resource = model.urlRoot.split('/')[1];
 						var id = model.id;
 						mockData[resource][id] = model;
-						callback (mockData[resource][id]);
+						callback (mockData[resource][model.id]);
 					};
 					
 					/**
@@ -731,7 +736,6 @@ var SMVP = (function(){
 				
 				return AjaxHandler;
 			})()
-			
 	}
 	
 	return API;
