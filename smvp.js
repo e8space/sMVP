@@ -211,7 +211,7 @@ var SMVP = (function(){
 					this.addModel = function(model){
 						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
 							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
-							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getJsonRepresentation())
+							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getObjectRepresentation());
 							return true;
 						}
 						return false;	
@@ -223,8 +223,10 @@ var SMVP = (function(){
 					 * @returns model
 					 */
 					this.readModel = function(id){
-						return new Model(_collection[id]);
-						
+						if (typeof _models[id] == 'undefined') {
+							typeof _collection[id] != 'undefined' ? _models[id] = new SMVP.Model(_collection[id]) : false;
+						}
+						return _models[id];
 					};
 					
 					/**
@@ -269,14 +271,16 @@ var SMVP = (function(){
 				 * @hint fetch collection
 				 * @returns collection
 				 */
-				Collection.prototype.fetch = function(){
+				Collection.prototype.fetch = function(callback){
 					var collection = {};
-					var data = _dataGateway.fetchCollection(this);
-					$.each(data,function(key,value){
-						collection[key]= value;
+					var self = this;
+					var data = _dataGateway.fetchCollection(this,function(data){
+						$.each(data,function(key,value){
+							collection[key]= value;
+						});
+						self.setCollection (collection);
+						typeof callback != 'undefined' ? callback(self.getCollection()) : false;
 					});
-					this.setCollection (collection);
-					return this.getCollection();
 				};
 					
 				/**

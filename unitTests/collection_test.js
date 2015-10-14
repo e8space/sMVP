@@ -5,8 +5,11 @@
 
 
 Collection_test = TestCase("Collection_test");
+Asynchronous_Collection_Test = AsyncTestCase('Asynchronous_Collection_Test');
 
-
+/**
+ * setUp
+ */
 Collection_test.prototype.setUp = function(){
 	SMVP.setDataGateway(new SMVP.DataGatewayMock());
 	
@@ -16,12 +19,32 @@ Collection_test.prototype.setUp = function(){
 	user2 = model.clone().setName("Bart").setId("100");
 	
 	cut = new SMVP.Collection(model);
-	
 };
 
+Asynchronous_Collection_Test.prototype.setUp = function(){
+	SMVP.setDataGateway(new SMVP.DataGatewayMock());
+	
+	model = new SMVP.Model({id:"", name:"", urlRoot:"/user"});
+	falseModel = new SMVP.Model({id:"", name:"", age:"", urlRoot:""});
+	user1 = model.clone().setName("Lucy").setId("001");
+	user2 = model.clone().setName("Bart").setId("100");
+	
+	SMVP.userCollection = new SMVP.Collection(model);
+	console.log("SMVP.userCollection:", SMVP.userCollection);
+}
+
+
+/**
+ * tearDown
+ */
 Collection_test.prototype.tearDown = function(){
 	cut = null;
 };
+
+Asynchronous_Collection_Test.tearDown = function(){
+	SMVP.userCollection = null;
+}
+
 
 /**
  * addModel true
@@ -47,31 +70,49 @@ Collection_test.prototype.test_readModel_should_return_model = function(){
 	assertEquals(expected,cut.readModel("001").getName());
 };
 
+
+/**
+ * readModel undefined
+ * 
+ */
+Collection_test.prototype.test_readModel_should_return_undefined = function(){
+	var expected = undefined;
+	assertEquals(expected,cut.readModel("001"));
+}
+
+/**
+ * update model
+ * 
+ */
+
+Collection_test.prototype.test_updateModel_should_update_model_properties = function(){
+	
+}
+
 /**
  * readModels
  */
-Collection_test.prototype.test_readModels_should_return_models = function(){
-	cut.addModel(user1);
-	cut.addModel(user2);
-	var expected = "Bart";
-	var models = cut.readModels();
-	
-	assertEquals(expected,models["100"].getName());
-};
+
 
 /**
  * fetch
  */
-Collection_test.prototype.test_fetch_should_return_collection = function(){
-	var expected = typeof {};
-	var actual = typeof cut.fetch(model);
-	assertEquals(expected,actual);
+Asynchronous_Collection_Test.prototype.test_fetch_should_return_collection = function(queue){
+	var expected = {};
+	var actual = null;
+	
+	callbackfunction = function(collection){
+		actual = collection;
+	}
+	
+	queue.call("Step1: fetch collection", function(callbacks){
+		var callbackWrapper = callbacks.add(callbackfunction);
+		SMVP.userCollection.fetch(callbackWrapper);
+	})
+	
+	queue.call("Step2: assert callbacks", function(){
+		assertEquals(typeof(expected), typeof(actual));
+	})
 };
 
-/**
- * post
- */
-Collection_test.prototype.test_post_should_return_true = function(){
-	cut.post();
-};
 
