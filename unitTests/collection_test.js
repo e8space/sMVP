@@ -8,12 +8,14 @@ Collection_test = TestCase("Collection_test");
 
 
 Collection_test.prototype.setUp = function(){
-	model = new Model({id:"", name:"", urlRoot:"/user"});
-	falseModel = new Model({id:"", name:"", age:"", urlRoot:""});
+	SMVP.setDataGateway(new SMVP.DataGatewayMock());
+	
+	model = new SMVP.Model({id:"", name:"", urlRoot:"/user"});
+	falseModel = new SMVP.Model({id:"", name:"", age:"", urlRoot:""});
 	user1 = model.clone().setName("Lucy").setId("001");
 	user2 = model.clone().setName("Bart").setId("100");
 	
-	cut = new Collection(model);
+	cut = new SMVP.Collection(model);
 	
 };
 

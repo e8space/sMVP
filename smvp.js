@@ -73,7 +73,6 @@ var SMVP = (function(){
 					 * @returns {Model}
 					 */
 					clone : function(){
-						console.log('clone');
 						return new SMVP.Model(this.getObjectRepresentation());
 					},	
 					
@@ -202,7 +201,6 @@ var SMVP = (function(){
 					var _keys = Object.keys(model.getObjectRepresentation()).sort();
 					
 					$(document).bind("modelPosted", function(o,data){
-						console.log("mockData", mockData);
 					})
 					
 					/**
@@ -285,7 +283,7 @@ var SMVP = (function(){
 				 * @hint post collection
 				 */
 				Collection.prototype.post = function(){
-					smvp.dataGateway.postCollection(this);
+					_dataGateway.postCollection(this);
 				};
 					
 				return Collection;
@@ -578,7 +576,7 @@ var SMVP = (function(){
 						model.id = id;
 						model.link = model.urlRoot+"/"+id;
 						mockData[resource][id]=model;
-						callback(mockData[resource][id]);
+						typeof callback != 'undefined' ? callback(mockData[resource][id]) : false;
 					};
 					
 					/**
@@ -587,7 +585,7 @@ var SMVP = (function(){
 					 */
 					this.fetchModel = function(model,callback){
 						var resource = model.urlRoot.split('/')[1];
-						callback(mockData[resource][model.id]);
+						typeof callback != 'undefined' ? callback(mockData[resource][model.id]) : false;
 					};
 					
 					/**
@@ -598,7 +596,7 @@ var SMVP = (function(){
 						var resource = model.urlRoot.split('/')[1];
 						var id = model.id;
 						mockData[resource][id] = model;
-						callback (mockData[resource][model.id]);
+						typeof callback != 'undefined' ? callback (mockData[resource][model.id]) : false;
 					};
 					
 					/**
@@ -609,7 +607,7 @@ var SMVP = (function(){
 						var resource = model.urlRoot.split('/')[1];
 						var id = model.id;
 						delete mockData[resource][id];
-						callback(true);
+						typeof callback != 'undefined' ? callback(true) : false;
 					};
 					
 					/**
@@ -620,7 +618,7 @@ var SMVP = (function(){
 						$.each(collection.getCollection(), function(key,value){
 							mockData[collection.getUrlRoot()][key]= value;
 						});
-						callback(true);
+						typeof callback != 'undefined' ? callback(true) : false;
 					};
 					
 					/**
@@ -628,7 +626,7 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.fetchCollection = function(collection, callback) {
-						callback(mockData[collection.getUrlRoot()]);
+						typeof callback != 'undefined' ? callback(mockData[collection.getUrlRoot()]) : false;
 					};
 					
 					/**
@@ -637,7 +635,7 @@ var SMVP = (function(){
 					 */
 					this.deleteCollection = function(collection,callback){
 						delete mockData[collection.getUrlRoot()];
-						callback(true);
+						typeof callback != 'undefined' ? callback(true) : false;
 					};
 				}
 				
