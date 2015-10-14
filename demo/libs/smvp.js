@@ -1,7 +1,7 @@
 /**
- * SMVP 1.0
- * MVP framework
- * 2014 mk
+ * SMVP 1.2
+ * javascript MVP framework
+ * 2015 mk
  */
 
 var SMVP = (function(){
@@ -9,18 +9,17 @@ var SMVP = (function(){
 	var _dataGateway = null;
 	String.prototype.ucfirst = function(){
 		return this.charAt(0).toUpperCase() + this.substr(1);
-	};
-	//new Helper();
+	};	
 	
 	var API = {
-			/**
-			 * Model
-			 */
 			
 			setDataGateway : function(dataGateway){
 				_dataGateway = dataGateway;
 			},
 			
+			/**
+			 * Model
+			 */
 			Model : (function(){
 				
 				/**
@@ -32,7 +31,7 @@ var SMVP = (function(){
 					var self =this;
 			        this.properties	= properties || {};
 
-					//define getter and setter according to properties
+					//define accessors according to properties
 					this.setGettersSetters = function(data){
 					
 						jQuery.extend(self.properties, data);
@@ -50,6 +49,20 @@ var SMVP = (function(){
 							
 						})();}
 					};
+					
+					//update properties and accessors according to json
+					this.updatePropertiesAndAccessors = function(json){
+						jQuery.extend(self.properties, json);
+	        			$.each(json, function(key,value){
+							if(typeof self["get"+key.ucfirst()] == 'undefined') {
+								var obj = {};
+								obj[key] = value;
+								self.setGettersSetters(obj);
+							}
+							self["set"+key.ucfirst()](value);
+						});
+					}
+					
 			        this.setGettersSetters(self.properties);
 				};
 				
@@ -60,7 +73,8 @@ var SMVP = (function(){
 					 * @returns {Model}
 					 */
 					clone : function(){
-						return new Model(this.getObjectRepresentation());
+						console.log('clone');
+						return new SMVP.Model(this.getObjectRepresentation());
 					},	
 					
 					/**
@@ -108,20 +122,13 @@ var SMVP = (function(){
 			         * @hint post model
 			         * @returns {Model}
 			         */
-			        post: function(){
+			        post: function(callback){
 						try {
 							var self = this;
-							_dataGateway.postModel(this.getData().getObjectRepresentation(), function(extendedProperties){
-								jQuery.extend(self.properties, extendedProperties);
-								$.each(extendedProperties, function(key,value){
-									if(typeof self["get"+key.ucfirst()] == 'undefined') {
-										var obj = {};
-										obj[key] = value;
-										self.setGettersSetters(obj);
-									}
-								});
-								$(document).trigger("modelChanged_"+this.getId(), {model:this})
-								return this;
+							_dataGateway.postModel(this.getObjectRepresentation(), function(json){
+								self.updatePropertiesAndAccessors(json);
+								$(document).trigger("modelChanged_"+self.getId(), {model:self});
+								typeof callback!= 'undefined' ? callback (self) : false;
 							});
 						} catch (e){
 			                console.log(e);
@@ -132,12 +139,12 @@ var SMVP = (function(){
 			         * @hint fetch model
 			         * @returns {Model}
 			         */
-			        fetch : function(){
+			        fetch : function(callback){
 			        	try {
 			        		var self = this;
-			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(model){
-			        			self.setGettersSetters(model);
-			        			return this;
+			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(json){
+			        			self.updatePropertiesAndAccessors(json);
+			        			typeof callback!= 'undefined' ? callback (self) : false;
 			        		});
 			        	} catch (e){
 			        		console.log(e);
@@ -148,11 +155,12 @@ var SMVP = (function(){
 			         * @hint update model
 			         * @returns {Model}
 			         */
-					update : function(){
+					update : function(callback){
 			            try {
-			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(model){
-			            		$(document).trigger("modelChanged_"+this.getId(), {model:this})
-				                return this;
+			            	var self = this;
+			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(response){
+			            		$(document).trigger("modelChanged_"+self.getId(), {model:self});
+			            		typeof callback!= 'undefined' ? callback (self) : false;
 			            	});
 			            } catch (e){
 			                console.log(e);
@@ -176,6 +184,113 @@ var SMVP = (function(){
 				
 				return Model;
 			})(),
+			
+			/**
+			 * Collection
+			 */
+			Collection : (function(){
+				
+				/**
+				 * @constructor
+				 * @param model
+				 */
+				function Collection(model){
+				
+					var _urlRoot = model.getUrlRoot().split('/')[1];
+					var _collection = {};
+					var _models = {};
+					var _keys = Object.keys(model.getObjectRepresentation()).sort();
+					
+					$(document).bind("modelPosted", function(o,data){
+						console.log("mockData", mockData);
+					})
+					
+					/**
+					 * @hint add model
+					 * @param model
+					 * @returns Boolean
+					 */
+					this.addModel = function(model){
+						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
+							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
+							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getJsonRepresentation())
+							return true;
+						}
+						return false;	
+					};
+							
+					/**
+					 * @hint read model
+					 * @param id
+					 * @returns model
+					 */
+					this.readModel = function(id){
+						return new Model(_collection[id]);
+						
+					};
+					
+					/**
+					 * @hint read models
+					 * @returns models
+					 */
+					this.readModels = function(){
+						if ($.isEmptyObject(_models)) {
+							$.each(_collection, function(key,value){
+								_models[key] = new SMVP.Model(value);
+							});
+						}
+						return _models;
+					};
+					
+					/**
+					 * @hint read collection
+					 * @returns collection
+					 */
+					this.getCollection = function(){
+						return _collection;
+					};
+					
+					/**
+					 * @hint set collection 
+					 * @param collection
+					 */
+					this.setCollection = function(collection){
+						_collection = collection;
+					};
+					
+					/**
+					 * @hint get Url root
+					 * @return urlRoot
+					 */
+					this.getUrlRoot = function(){
+						return _urlRoot;
+					};
+				}
+				
+				/**
+				 * @hint fetch collection
+				 * @returns collection
+				 */
+				Collection.prototype.fetch = function(){
+					var collection = {};
+					var data = _dataGateway.fetchCollection(this);
+					$.each(data,function(key,value){
+						collection[key]= value;
+					});
+					this.setCollection (collection);
+					return this.getCollection();
+				};
+					
+				/**
+				 * @hint post collection
+				 */
+				Collection.prototype.post = function(){
+					smvp.dataGateway.postCollection(this);
+				};
+					
+				return Collection;
+			})(),
+			
 			/**
 			 * View
 			 */
@@ -202,7 +317,7 @@ var SMVP = (function(){
 						return _model;
 					}; 
 					
-					 $(_container).empty();
+					$(_container).empty();
 			    }
 				    
 				//public 
@@ -249,12 +364,10 @@ var SMVP = (function(){
 			    return View;
 			})(),
 
-			
 			/**
 			 * Presenter
 			 */
 			Presenter : (function(){
-				
 				
 				/**
 				 * @constructor
@@ -372,7 +485,6 @@ var SMVP = (function(){
 			    	 * @hint deletes view and related subviews and handlers
 			    	 */
 			    	destroyView : function(){
-			    		
 			    		var self = this;
 			    		var subTriads = self.getSubTriads();
 			    		for (triad in subTriads) {
@@ -387,241 +499,6 @@ var SMVP = (function(){
 			    return Presenter;
 			})(),
 			
-			/**
-			 * DataGatewayMock
-			 */
-			DataGatewayMock : (function(){
-				
-				/**
-				 * @constructor
-				 * @param ajaxHandler
-				 */
-				function DataGatewayMock(ajaxHandler){
-					
-					/**
-					 * @hint post model
-					 * @param model
-					 */
-					this.postModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						var id = resource+(Object.keys(mockData[resource]).length+1);
-						
-						model.id = id;
-						model.link = model.urlRoot+"/"+id;
-						mockData[resource][id]=model;
-						callback(mockData[resource][id]);
-					};
-					
-					/**
-					 * @fetch model
-					 * @param model
-					 */
-					this.fetchModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						callback(mockData[resource][model.id]);
-					};
-					
-					/**
-					 * @hint update model
-					 * @param model
-					 */
-					this.updateModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						var id = model.id;
-						mockData[resource][id] = model;
-						callback (mockData[resource][id]);
-					};
-					
-					/**
-					 * @hint delete model
-					 * @param model
-					 */
-					this.deleteModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						var id = model.id;
-						delete mockData[resource][id];
-						callback(true);
-					};
-					
-					/**
-					 * @hint post collection
-					 * @param collection
-					 */
-					this.postCollection = function(collection, callback){
-						$.each(collection.getCollection(), function(key,value){
-							mockData[collection.getUrlRoot()][key]= value;
-						});
-						callback(true);
-					};
-					
-					/**
-					 * @hint fetch collection
-					 * @param collection
-					 */
-					this.fetchCollection = function(collection, callback) {
-						callback(mockData[collection.getUrlRoot()]);
-					};
-					
-					/**
-					 * @hint delete collection
-					 * @param collection
-					 */
-					this.deleteCollection = function(collection,callback){
-						delete mockData[collection.getUrlRoot()];
-						callback(true);
-					};
-				}
-				
-				return DataGatewayMock;
-			})(),
-
-			/**
-			 * Collection
-			 */
-			Collection : (function(){
-				
-				/**
-				 * @constructor
-				 * @param model
-				 */
-				function Collection(model){
-				
-					var _urlRoot = model.getUrlRoot().split('/')[1];
-					var _collection = {};
-					var _models = {};
-					var _keys = Object.keys(model.getObjectRepresentation()).sort();
-					
-					$(document).bind("modelPosted", function(o,data){
-						console.log("mockData", mockData);
-					})
-					
-					/**
-					 * @hint add model
-					 * @param model
-					 * @returns Boolean
-					 */
-					this.addModel = function(model){
-						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
-							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
-							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getJsonRepresentation())
-							return true;
-						}
-						return false;	
-					};
-							
-					/**
-					 * @hint read model
-					 * @param id
-					 * @returns model
-					 */
-					this.readModel = function(id){
-						return new Model(_collection[id]);
-						
-					};
-					
-					/**
-					 * @hint read models
-					 * @returns models
-					 */
-					this.readModels = function(){
-						if ($.isEmptyObject(_models)) {
-							$.each(_collection, function(key,value){
-								_models[key] = new SMVP.Model(value);
-							});
-						}
-						return _models;
-					};
-					
-					/**
-					 * @hint read collection
-					 * @returns collection
-					 */
-					this.getCollection = function(){
-						return _collection;
-					};
-					
-					/**
-					 * @hint set collection 
-					 * @param collection
-					 */
-					this.setCollection = function(collection){
-						_collection = collection;
-					};
-					
-					/**
-					 * @hint get Url root
-					 * @return urlRoot
-					 */
-					this.getUrlRoot = function(){
-						return _urlRoot;
-					};
-				}
-				
-				/**
-				 * @hint fetch collection
-				 * @returns collection
-				 */
-				Collection.prototype.fetch = function(){
-					var collection = {};
-					var data = _dataGateway.fetchCollection(this);
-					$.each(data,function(key,value){
-						collection[key]= value;
-					});
-					this.setCollection (collection);
-					return this.getCollection();
-				};
-					
-				/**
-				 * @hint post collection
-				 */
-				Collection.prototype.post = function(){
-					smvp.dataGateway.postCollection(this);
-				};
-					
-				return Collection;
-			})(),
-			
-			/**
-			 * Helper
-			 */
-			Helper : (function(){
-				
-				function Helper(){
-					
-					/**
-					 * first char to upper case
-					 */
-					String.prototype.ucfirst = function(){
-						return this.charAt(0).toUpperCase() + this.substr(1);
-					};
-					
-					guid = (function() {
-						  function s4() {
-						    return Math.floor((1 + Math.random()) * 0x10000)
-						               .toString(16)
-						               .substring(1);
-						  }
-						  return function() {
-						    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-						           s4() + '-' + s4() + s4() + s4();
-						  };
-					})();
-				
-					
-					uuid = function() {
-						var d = new Date().getTime();
-					    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-					        var r = (d + Math.random()*16)%16 | 0;
-					        d = Math.floor(d/16);
-					        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
-					    });
-					    return uuid;
-					};
-				}
-					
-				return Helper;
-			})(),
-
 			/**
 			 * DataGateway
 			 */
@@ -680,6 +557,137 @@ var SMVP = (function(){
 			})(),
 			
 			/**
+			 * DataGatewayMock
+			 */
+			DataGatewayMock : (function(){
+				
+				/**
+				 * @constructor
+				 * @param ajaxHandler
+				 */
+				function DataGatewayMock(ajaxHandler){
+					
+					/**
+					 * @hint post model
+					 * @param model
+					 */
+					this.postModel = function(model,callback){
+						var resource = model.urlRoot.split('/')[1];
+						var id = resource+(Object.keys(mockData[resource]).length+1);
+						
+						model.id = id;
+						model.link = model.urlRoot+"/"+id;
+						mockData[resource][id]=model;
+						callback(mockData[resource][id]);
+					};
+					
+					/**
+					 * @fetch model
+					 * @param model
+					 */
+					this.fetchModel = function(model,callback){
+						var resource = model.urlRoot.split('/')[1];
+						callback(mockData[resource][model.id]);
+					};
+					
+					/**
+					 * @hint update model
+					 * @param model
+					 */
+					this.updateModel = function(model,callback){
+						var resource = model.urlRoot.split('/')[1];
+						var id = model.id;
+						mockData[resource][id] = model;
+						callback (mockData[resource][model.id]);
+					};
+					
+					/**
+					 * @hint delete model
+					 * @param model
+					 */
+					this.deleteModel = function(model,callback){
+						var resource = model.urlRoot.split('/')[1];
+						var id = model.id;
+						delete mockData[resource][id];
+						callback(true);
+					};
+					
+					/**
+					 * @hint post collection
+					 * @param collection
+					 */
+					this.postCollection = function(collection, callback){
+						$.each(collection.getCollection(), function(key,value){
+							mockData[collection.getUrlRoot()][key]= value;
+						});
+						callback(true);
+					};
+					
+					/**
+					 * @hint fetch collection
+					 * @param collection
+					 */
+					this.fetchCollection = function(collection, callback) {
+						callback(mockData[collection.getUrlRoot()]);
+					};
+					
+					/**
+					 * @hint delete collection
+					 * @param collection
+					 */
+					this.deleteCollection = function(collection,callback){
+						delete mockData[collection.getUrlRoot()];
+						callback(true);
+					};
+				}
+				
+				return DataGatewayMock;
+			})(),
+
+			
+			
+			/**
+			 * Helper
+			 */
+			Helper : (function(){
+				
+				function Helper(){
+					
+					/**
+					 * first char to upper case
+					 */
+					String.prototype.ucfirst = function(){
+						return this.charAt(0).toUpperCase() + this.substr(1);
+					};
+					
+					guid = (function() {
+						  function s4() {
+						    return Math.floor((1 + Math.random()) * 0x10000)
+						               .toString(16)
+						               .substring(1);
+						  }
+						  return function() {
+						    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+						           s4() + '-' + s4() + s4() + s4();
+						  };
+					})();
+				
+					
+					uuid = function() {
+						var d = new Date().getTime();
+					    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+					        var r = (d + Math.random()*16)%16 | 0;
+					        d = Math.floor(d/16);
+					        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
+					    });
+					    return uuid;
+					};
+				}
+					
+				return Helper;
+			})(),
+
+			/**
 			 * AjaxHandler
 			 */
 			AjaxHandler : (function(){
@@ -729,7 +737,6 @@ var SMVP = (function(){
 				
 				return AjaxHandler;
 			})()
-			
 	}
 	
 	return API;
