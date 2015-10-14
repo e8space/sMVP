@@ -1,6 +1,6 @@
 /**
- * SMVP 1.0
- * MVP framework
+ * SMVP 1.2
+ * javascript MVP framework
  * 2015 mk
  */
 
@@ -183,6 +183,112 @@ var SMVP = (function(){
 				};
 				
 				return Model;
+			})(),
+			
+			/**
+			 * Collection
+			 */
+			Collection : (function(){
+				
+				/**
+				 * @constructor
+				 * @param model
+				 */
+				function Collection(model){
+				
+					var _urlRoot = model.getUrlRoot().split('/')[1];
+					var _collection = {};
+					var _models = {};
+					var _keys = Object.keys(model.getObjectRepresentation()).sort();
+					
+					$(document).bind("modelPosted", function(o,data){
+						console.log("mockData", mockData);
+					})
+					
+					/**
+					 * @hint add model
+					 * @param model
+					 * @returns Boolean
+					 */
+					this.addModel = function(model){
+						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
+							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
+							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getJsonRepresentation())
+							return true;
+						}
+						return false;	
+					};
+							
+					/**
+					 * @hint read model
+					 * @param id
+					 * @returns model
+					 */
+					this.readModel = function(id){
+						return new Model(_collection[id]);
+						
+					};
+					
+					/**
+					 * @hint read models
+					 * @returns models
+					 */
+					this.readModels = function(){
+						if ($.isEmptyObject(_models)) {
+							$.each(_collection, function(key,value){
+								_models[key] = new SMVP.Model(value);
+							});
+						}
+						return _models;
+					};
+					
+					/**
+					 * @hint read collection
+					 * @returns collection
+					 */
+					this.getCollection = function(){
+						return _collection;
+					};
+					
+					/**
+					 * @hint set collection 
+					 * @param collection
+					 */
+					this.setCollection = function(collection){
+						_collection = collection;
+					};
+					
+					/**
+					 * @hint get Url root
+					 * @return urlRoot
+					 */
+					this.getUrlRoot = function(){
+						return _urlRoot;
+					};
+				}
+				
+				/**
+				 * @hint fetch collection
+				 * @returns collection
+				 */
+				Collection.prototype.fetch = function(){
+					var collection = {};
+					var data = _dataGateway.fetchCollection(this);
+					$.each(data,function(key,value){
+						collection[key]= value;
+					});
+					this.setCollection (collection);
+					return this.getCollection();
+				};
+					
+				/**
+				 * @hint post collection
+				 */
+				Collection.prototype.post = function(){
+					smvp.dataGateway.postCollection(this);
+				};
+					
+				return Collection;
 			})(),
 			
 			/**
@@ -379,7 +485,6 @@ var SMVP = (function(){
 			    	 * @hint deletes view and related subviews and handlers
 			    	 */
 			    	destroyView : function(){
-			    		
 			    		var self = this;
 			    		var subTriads = self.getSubTriads();
 			    		for (triad in subTriads) {
@@ -392,6 +497,63 @@ var SMVP = (function(){
 			    };
 			    
 			    return Presenter;
+			})(),
+			
+			/**
+			 * DataGateway
+			 */
+			DataGateway : (function(){
+				
+				/**
+				 * @constructor
+				 * @param ajaxHandler
+				 */
+				function DataGateway(ajaxHandler){
+					
+					this.postModel = function(model){
+						ajaxHandler.post(model.link,model,function(data){
+							return data;
+						});
+					};
+					
+					this.fetchModel = function(model){
+						ajaxHandler.get(model.link, function(data){
+							return data;
+						});
+					};
+					
+					this.updateModel = function(model){
+						ajaxHandler.put(model.link,model,function(data){
+							return data;
+						});
+					};
+					
+					this.deleteModel = function(model){
+						ajaxHandler.destroy(model.link, function(data){
+							return data;
+						});
+					};
+					
+					this.postCollection = function(collection){
+						ajaxHandler.post(collection.getUrlRoot(), collection, function(data){
+							return data;
+						});
+					};
+					
+					this.fetchCollection = function(collection) {
+						ajaxHandler.get(collection.getUrlRoot(), function(data){
+							return data;
+						});
+					};
+					
+					this.deleteCollection = function(collection){
+						ajaxHandler.destroy(collection.getUrlRoot(), function(data){
+							return data;
+						});
+					};
+				}
+				
+				return DataGateway;
 			})(),
 			
 			/**
@@ -482,111 +644,7 @@ var SMVP = (function(){
 				return DataGatewayMock;
 			})(),
 
-			/**
-			 * Collection
-			 */
-			Collection : (function(){
-				
-				/**
-				 * @constructor
-				 * @param model
-				 */
-				function Collection(model){
-				
-					var _urlRoot = model.getUrlRoot().split('/')[1];
-					var _collection = {};
-					var _models = {};
-					var _keys = Object.keys(model.getObjectRepresentation()).sort();
-					
-					$(document).bind("modelPosted", function(o,data){
-						console.log("mockData", mockData);
-					})
-					
-					/**
-					 * @hint add model
-					 * @param model
-					 * @returns Boolean
-					 */
-					this.addModel = function(model){
-						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
-							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
-							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getJsonRepresentation())
-							return true;
-						}
-						return false;	
-					};
-							
-					/**
-					 * @hint read model
-					 * @param id
-					 * @returns model
-					 */
-					this.readModel = function(id){
-						return new Model(_collection[id]);
-						
-					};
-					
-					/**
-					 * @hint read models
-					 * @returns models
-					 */
-					this.readModels = function(){
-						if ($.isEmptyObject(_models)) {
-							$.each(_collection, function(key,value){
-								_models[key] = new SMVP.Model(value);
-							});
-						}
-						return _models;
-					};
-					
-					/**
-					 * @hint read collection
-					 * @returns collection
-					 */
-					this.getCollection = function(){
-						return _collection;
-					};
-					
-					/**
-					 * @hint set collection 
-					 * @param collection
-					 */
-					this.setCollection = function(collection){
-						_collection = collection;
-					};
-					
-					/**
-					 * @hint get Url root
-					 * @return urlRoot
-					 */
-					this.getUrlRoot = function(){
-						return _urlRoot;
-					};
-				}
-				
-				/**
-				 * @hint fetch collection
-				 * @returns collection
-				 */
-				Collection.prototype.fetch = function(){
-					var collection = {};
-					var data = _dataGateway.fetchCollection(this);
-					$.each(data,function(key,value){
-						collection[key]= value;
-					});
-					this.setCollection (collection);
-					return this.getCollection();
-				};
-					
-				/**
-				 * @hint post collection
-				 */
-				Collection.prototype.post = function(){
-					smvp.dataGateway.postCollection(this);
-				};
-					
-				return Collection;
-			})(),
+			
 			
 			/**
 			 * Helper
@@ -629,63 +687,6 @@ var SMVP = (function(){
 				return Helper;
 			})(),
 
-			/**
-			 * DataGateway
-			 */
-			DataGateway : (function(){
-				
-				/**
-				 * @constructor
-				 * @param ajaxHandler
-				 */
-				function DataGateway(ajaxHandler){
-					
-					this.postModel = function(model){
-						ajaxHandler.post(model.link,model,function(data){
-							return data;
-						});
-					};
-					
-					this.fetchModel = function(model){
-						ajaxHandler.get(model.link, function(data){
-							return data;
-						});
-					};
-					
-					this.updateModel = function(model){
-						ajaxHandler.put(model.link,model,function(data){
-							return data;
-						});
-					};
-					
-					this.deleteModel = function(model){
-						ajaxHandler.destroy(model.link, function(data){
-							return data;
-						});
-					};
-					
-					this.postCollection = function(collection){
-						ajaxHandler.post(collection.getUrlRoot(), collection, function(data){
-							return data;
-						});
-					};
-					
-					this.fetchCollection = function(collection) {
-						ajaxHandler.get(collection.getUrlRoot(), function(data){
-							return data;
-						});
-					};
-					
-					this.deleteCollection = function(collection){
-						ajaxHandler.destroy(collection.getUrlRoot(), function(data){
-							return data;
-						});
-					};
-				}
-				
-				return DataGateway;
-			})(),
-			
 			/**
 			 * AjaxHandler
 			 */

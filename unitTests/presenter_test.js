@@ -9,11 +9,11 @@ Presenter_test = TestCase("Presenter_test");
  * setUp
  */
 Presenter_test.prototype.setUp = function(){
-	viewModel = new Model({
+	viewModel = new SMVP.Model({
 		template : "viewTemplate",
 		container : "container"
 	});
-	presenter = new Presenter(new View(viewModel), new Model({id:"testModel"}));
+	presenter = new SMVP.Presenter(new SMVP.View(viewModel), new SMVP.Model({id:"testModel"}));
 };
 
 /**
