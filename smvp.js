@@ -211,7 +211,7 @@ var SMVP = (function(){
 					this.addModel = function(model){
 						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
 							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
-							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getObjectRepresentation());
+							_models[model.getObjectRepresentation().id] = model;
 							return true;
 						}
 						return false;	

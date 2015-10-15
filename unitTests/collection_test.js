@@ -84,14 +84,25 @@ Collection_test.prototype.test_readModel_should_return_undefined = function(){
  * update model
  * 
  */
-
 Collection_test.prototype.test_updateModel_should_update_model_properties = function(){
+	cut.addModel(user1);
+	var expected = "Bonita";
 	
+	user1.setName("Bonita");
+	assertEquals(expected, cut.readModel("001").getName());
 }
 
 /**
  * readModels
  */
+Collection_test.prototype.test_readModels_should_return_models = function(){
+	cut.addModel(user1);
+	cut.addModel(user2);
+	var expected = 2;
+	
+	assertEquals(expected, Object.keys(cut.readModels()).length);
+	
+}
 
 
 /**
