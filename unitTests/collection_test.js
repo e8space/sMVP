@@ -30,7 +30,6 @@ Asynchronous_Collection_Test.prototype.setUp = function(){
 	user2 = model.clone().setName("Bart").setId("100");
 	
 	SMVP.userCollection = new SMVP.Collection(model);
-	console.log("SMVP.userCollection:", SMVP.userCollection);
 }
 
 
@@ -125,5 +124,58 @@ Asynchronous_Collection_Test.prototype.test_fetch_should_return_collection = fun
 		assertEquals(typeof(expected), typeof(actual));
 	})
 };
+
+/**
+ * post
+ */
+Asynchronous_Collection_Test.prototype.test_post_should_return_collection = function(queue){
+	var expected = {};
+	var actual = null;
+	
+	SMVP.userCollection.addModel(user1);
+	SMVP.userCollection.addModel(user2);
+	
+	callbackfunction = function(collection){
+		actual = collection;
+	}
+	
+	queue.call("Step1: post collection", function(callbacks){
+		var callbackWrapper = callbacks.add(callbackfunction);
+		SMVP.userCollection.post(callbackWrapper);
+	})
+	
+	queue.call("Step2: assert callbacks", function(){
+		assertEquals(typeof(expected), typeof(actual));
+	})
+}
+
+/**
+ * update
+ */
+Asynchronous_Collection_Test.prototype.test_update_should_return_collection = function(queue){
+	var expected = {};
+	var actual = null;
+	
+	SMVP.userCollection.addModel(user1);
+	SMVP.userCollection.addModel(user2);
+	
+	callbackfunction = function(collection){
+		actual = collection;
+	}
+	
+	queue.call("Step1: post collection", function(callbacks){
+		SMVP.userCollection.post();
+	})
+	
+	queue.call("Step2: update collection", function(callbacks){
+		user1.setName("Bianca");
+		var callbackWrapper = callbacks.add(callbackfunction);
+		SMVP.userCollection.update(callbackWrapper);
+	})
+	
+	queue.call("Step3: assert callbacks", function(){
+		assertEquals(typeof(expected), typeof(actual));
+	})
+}
 
 

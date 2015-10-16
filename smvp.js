@@ -268,6 +268,15 @@ var SMVP = (function(){
 				}
 				
 				/**
+				 * @hint post collection
+				 */
+				Collection.prototype.post = function(callback){
+					_dataGateway.postCollection(this, function(){
+						typeof callback !='undefined' ? callback(self) : false;
+					});
+				};
+				
+				/**
 				 * @hint fetch collection
 				 * @returns collection
 				 */
@@ -276,7 +285,7 @@ var SMVP = (function(){
 					var self = this;
 					var data = _dataGateway.fetchCollection(this,function(data){
 						$.each(data,function(key,value){
-							collection[key]= value;
+							collection[key] = value;
 						});
 						self.setCollection (collection);
 						typeof callback != 'undefined' ? callback(self.getCollection()) : false;
@@ -284,11 +293,24 @@ var SMVP = (function(){
 				};
 					
 				/**
-				 * @hint post collection
+				 * @hint update collection
+				 * @returns collection
 				 */
-				Collection.prototype.post = function(){
-					_dataGateway.postCollection(this);
-				};
+				Collection.prototype.update = function(callback){
+					_dataGateway.updateCollection(this, function(response){
+						typeof callback !='undefined' ? callback(response) : false;
+					});
+				}
+				
+				/**
+				 * @hint delete collection
+				 * @return response code
+				 */
+				Collection.prototype.delete = function(callback){
+					_dataGateway.deleteCollection(this, function(){
+						typeof callback !='undefined' ? callback(self) : false;
+					});
+				}
 					
 				return Collection;
 			})(),
@@ -619,10 +641,15 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.postCollection = function(collection, callback){
-						$.each(collection.getCollection(), function(key,value){
-							mockData[collection.getUrlRoot()][key]= value;
-						});
-						typeof callback != 'undefined' ? callback(true) : false;
+						try {
+							mockData[collection.getUrlRoot()] = {};
+							$.each(collection.getCollection(), function(key,value){
+								mockData[collection.getUrlRoot()][key]= value;
+							});
+							typeof callback != 'undefined' ? callback(true) : false;
+						} catch(e){
+							typeof callback != 'undefined' ? callback(false) : false;
+						}
 					};
 					
 					/**
@@ -630,16 +657,43 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.fetchCollection = function(collection, callback) {
-						typeof callback != 'undefined' ? callback(mockData[collection.getUrlRoot()]) : false;
+						try {
+							typeof callback != 'undefined' ? callback(mockData[collection.getUrlRoot()]) : false;
+						} catch(e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback ({}) : false;
+						}
+					
 					};
+					
+					/**
+					 * @update collection
+					 * @param collection
+					 */
+					this.updateCollection = function(collection, callback){
+						try {
+							mockData[collection.getUrlRoot()] = {};
+							$.each(collection.getCollection(), function(key,value){
+								mockData[collection.getUrlRoot()][key]= value;
+							});
+							typeof callback != 'undefined' ? callback(true) : false;
+						} catch(e){
+							typeof callback != 'undefined' ? callback(false) : false;
+						}
+					}
 					
 					/**
 					 * @hint delete collection
 					 * @param collection
 					 */
-					this.deleteCollection = function(collection,callback){
-						delete mockData[collection.getUrlRoot()];
-						typeof callback != 'undefined' ? callback(true) : false;
+					this.deleteCollection = function(collection, callback){
+						try {
+							delete mockData[collection.getUrlRoot()];
+							typeof callback != 'undefined' ? callback(true) : false;
+						} catch(e) {
+							console.log(e); 
+							typeof callback != 'undefined' ? callback(false) : false;
+						}
 					};
 				}
 				
