@@ -152,8 +152,8 @@ Asynchronous_Collection_Test.prototype.test_post_should_return_collection = func
 /**
  * update
  */
-Asynchronous_Collection_Test.prototype.test_update_should_return_collection = function(queue){
-	var expected = {};
+Asynchronous_Collection_Test.prototype.test_update_should_return_true = function(queue){
+	var expected = true;
 	var actual = null;
 	
 	SMVP.userCollection.addModel(user1);
@@ -174,7 +174,7 @@ Asynchronous_Collection_Test.prototype.test_update_should_return_collection = fu
 	})
 	
 	queue.call("Step3: assert callbacks", function(){
-		assertEquals(typeof(expected), typeof(actual));
+		assertEquals(expected, actual);
 	})
 }
 
