@@ -11,11 +11,14 @@ var SMVP = (function(){
 		return this.charAt(0).toUpperCase() + this.substr(1);
 	};	
 	
+	
 	var API = {
 			
 			setDataGateway : function(dataGateway){
 				_dataGateway = dataGateway;
 			},
+			
+			
 			
 			/**
 			 * Model
@@ -173,7 +176,6 @@ var SMVP = (function(){
 
 			        /**
 			         * @hint destroy model
-			         * @returns true or undefined
 			         */
 					destroy : function(){
 						try {
@@ -218,8 +220,14 @@ var SMVP = (function(){
 					 */
 					this.addModel = function(model){
 						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
-							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
-							_models[model.getObjectRepresentation().id] = model;
+							if (model.getObjectRepresentation().id != "") {
+								_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
+								_models[model.getObjectRepresentation().id] = model;
+							} else {
+								console.log("API HELPER:", _helper.uuid());
+								model.setId(_helper.uuid());
+								console.log("id:", model.getId());
+							}
 							return true;
 						}
 						return false;	
@@ -264,6 +272,7 @@ var SMVP = (function(){
 					 */
 					this.setCollection = function(collection){
 						_collection = collection;
+						console.log("_collection:", _collection.length());
 					};
 					
 					/**
@@ -273,17 +282,26 @@ var SMVP = (function(){
 					this.getUrlRoot = function(){
 						return _urlRoot;
 					};
+					
 				}
 				
 				/**
 				 * @hint post collection
 				 */
 				Collection.prototype.post = function(callback){
-					_dataGateway.postCollection(this, function(response){
-						if (response.status === 200) {
+					//try {
+						var self = this;
+						_dataGateway.postCollection(this, function(response){
+							console.log("response: ", response);
+							response.status == 200
+								? self.setCollection(response)	
+								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
 							typeof callback !='undefined' ? callback(self) : false;
-						}
-					});
+						});
+					//} catch(e){
+						//console.log(e);
+					//}
+					
 				};
 				
 				/**
@@ -678,15 +696,23 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.postCollection = function(collection, callback){
-						try {
+						//try {
+							console.log("collection:", collection.getCollection());
 							mockData[collection.getUrlRoot()] = {};
 							$.each(collection.getCollection(), function(key,value){
+								console.log("value: ", value);
+								var resource = collection.getUrlRoot().split('/')[1];
+								var id = resource+(Object.keys(mockData[resource]).length+1);
+								
+								value.id = id;
+								value.link = collection.getUrlRoot()+"/"+id;
 								mockData[collection.getUrlRoot()][key]= value;
 							});
-							typeof callback != 'undefined' ? callback(this.createResponseObject(200,null)) : false;
-						} catch(e){
-							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
-						}
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[collection.getUrlRoot()])) : false;
+						//} catch(e){
+							//console.log(e);
+							//typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+						//}
 					};
 					
 					/**
@@ -745,38 +771,27 @@ var SMVP = (function(){
 			Helper : (function(){
 				
 				function Helper(){
-					
-					/**
-					 * first char to upper case
-					 */
-					String.prototype.ucfirst = function(){
-						return this.charAt(0).toUpperCase() + this.substr(1);
-					};
-					
-					guid = (function() {
-						  function s4() {
-						    return Math.floor((1 + Math.random()) * 0x10000)
-						               .toString(16)
-						               .substring(1);
-						  }
-						  return function() {
-						    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-						           s4() + '-' + s4() + s4() + s4();
-						  };
-					})();
+				};
 				
-					
-					uuid = function() {
-						var d = new Date().getTime();
-					    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-					        var r = (d + Math.random()*16)%16 | 0;
-					        d = Math.floor(d/16);
-					        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
-					    });
-					    return uuid;
+				Helper.prototype.guid = function() {
+					function s4() {
+						return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+					}
+					return function() {
+						return s4() + s4() + '-' + s4() + '-' + s4() + '-' +s4() + '-' + s4() + s4() + s4();
 					};
 				}
-					
+				
+				Helper.prototype.uuid = function() {
+					var d = new Date().getTime();
+				    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				        var r = (d + Math.random()*16)%16 | 0;
+				        d = Math.floor(d/16);
+				        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
+				    });
+				    return uuid;
+				};
+				
 				return Helper;
 			})(),
 
@@ -831,6 +846,6 @@ var SMVP = (function(){
 				return AjaxHandler;
 			})()
 	}
-	
+	var _helper = new API.Helper();
 	return API;
 })();

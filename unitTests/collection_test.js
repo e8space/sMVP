@@ -18,6 +18,8 @@ Collection_test.prototype.setUp = function(){
 	user1 = model.clone().setName("Lucy").setId("001");
 	user2 = model.clone().setName("Bart").setId("100");
 	
+	newUser1 = model.clone().setName("newUser1");
+	newUser2 = model.clone().setName("newUser2");
 	cut = new SMVP.Collection(model);
 };
 
@@ -29,6 +31,8 @@ Asynchronous_Collection_Test.prototype.setUp = function(){
 	user1 = model.clone().setName("Lucy").setId("001");
 	user2 = model.clone().setName("Bart").setId("100");
 	
+	newUser1 = model.clone().setName("newUser1");
+	newUser2 = model.clone().setName("newUser2");
 	SMVP.userCollection = new SMVP.Collection(model);
 }
 
@@ -132,8 +136,8 @@ Asynchronous_Collection_Test.prototype.test_post_should_return_collection = func
 	var expected = {};
 	var actual = null;
 	
-	SMVP.userCollection.addModel(user1);
-	SMVP.userCollection.addModel(user2);
+	SMVP.userCollection.addModel(newUser1);
+	SMVP.userCollection.addModel(newUser2);
 	
 	callbackfunction = function(collection){
 		actual = collection;
