@@ -43,6 +43,8 @@ var SMVP = (function(){
 							
 							self["set"+obj.ucfirst()] = function(value){
 								self.properties[cObj] = value;
+								$(document).trigger("modelChanged",self);
+								
 								return this;
 							};
 							
@@ -219,17 +221,18 @@ var SMVP = (function(){
 					 * @returns Boolean
 					 */
 					this.addModel = function(model){
-						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
+						
+						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()).sort())) {
 							if (model.getObjectRepresentation().id != "") {
 								_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
 								_models[model.getObjectRepresentation().id] = model;
 							} else {
-								console.log("API HELPER:", _helper.uuid());
 								model.setId(_helper.uuid());
-								console.log("id:", model.getId());
+								_collection[model.getId()] = model.getObjectRepresentation();
+								_models[model.getId()] = model;
 							}
 							return true;
-						}
+						}	
 						return false;	
 					};
 							
@@ -244,6 +247,14 @@ var SMVP = (function(){
 						}
 						return _models[id];
 					};
+					
+					/**
+					 * @hint get models
+					 * @return models
+					 */
+					this.getModels = function(){
+						return _models;
+					}
 					
 					/**
 					 * @hint read models
@@ -272,7 +283,6 @@ var SMVP = (function(){
 					 */
 					this.setCollection = function(collection){
 						_collection = collection;
-						console.log("_collection:", _collection.length());
 					};
 					
 					/**
@@ -282,26 +292,20 @@ var SMVP = (function(){
 					this.getUrlRoot = function(){
 						return _urlRoot;
 					};
-					
 				}
 				
 				/**
 				 * @hint post collection
 				 */
 				Collection.prototype.post = function(callback){
-					//try {
-						var self = this;
-						_dataGateway.postCollection(this, function(response){
-							console.log("response: ", response);
-							response.status == 200
-								? self.setCollection(response)	
-								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
-							typeof callback !='undefined' ? callback(self) : false;
-						});
-					//} catch(e){
-						//console.log(e);
-					//}
-					
+					var self = this;
+					_dataGateway.postCollection(this, function(response){
+						console.log("response:", response);
+						response.status == 200
+							? self.setCollection(response.data)	
+							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
+						typeof callback !='undefined' ? callback(self) : false;
+					});
 				};
 				
 				/**
@@ -309,14 +313,12 @@ var SMVP = (function(){
 				 * @returns collection
 				 */
 				Collection.prototype.fetch = function(callback){
-					var collection = {};
 					var self = this;
-					var data = _dataGateway.fetchCollection(this,function(data){
-						$.each(data,function(key,value){
-							collection[key] = value;
-						});
-						self.setCollection (collection);
-						typeof callback != 'undefined' ? callback(self.getCollection()) : false;
+					_dataGateway.fetchCollection(this, function(response){
+						response.status == 200
+							? self.setCollection(response.data)
+							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"fetch collection failed"});
+						typeof callback != 'undefined' ? callback(self) : false;
 					});
 				};
 					
@@ -325,8 +327,13 @@ var SMVP = (function(){
 				 * @returns collection
 				 */
 				Collection.prototype.update = function(callback){
+					var self = this;
 					_dataGateway.updateCollection(this, function(response){
-						typeof callback !='undefined' ? callback(response) : false;
+						console.log("response: ", response);
+						response.status == 200
+							? self.setCollection(response.data)
+							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"update collection failed"});
+						typeof callback !='undefined' ? callback(self) : false;
 					});
 				}
 				
@@ -696,23 +703,20 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.postCollection = function(collection, callback){
-						//try {
-							console.log("collection:", collection.getCollection());
-							mockData[collection.getUrlRoot()] = {};
-							$.each(collection.getCollection(), function(key,value){
-								console.log("value: ", value);
-								var resource = collection.getUrlRoot().split('/')[1];
-								var id = resource+(Object.keys(mockData[resource]).length+1);
-								
-								value.id = id;
-								value.link = collection.getUrlRoot()+"/"+id;
-								mockData[collection.getUrlRoot()][key]= value;
+						try {
+							var resource = collection.getUrlRoot();
+							mockData[resource] = {};
+							$.each(collection.getModels(), function(key,model){
+								console.log("modelGetId:", model.getId());
+								model.setId(resource+(Object.keys(mockData[resource]).length+1));
+								model.setLink(resource+"/"+model.getId());
+								mockData[resource][model.getId()]= model;
 							});
-							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[collection.getUrlRoot()])) : false;
-						//} catch(e){
-							//console.log(e);
-							//typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
-						//}
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
+						} catch(e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+						}
 					};
 					
 					/**
@@ -739,9 +743,9 @@ var SMVP = (function(){
 							$.each(collection.getCollection(), function(key,value){
 								mockData[collection.getUrlRoot()][key]= value;
 							});
-							typeof callback != 'undefined' ? callback(this.createResponseObject(200,true)) : false;
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[collection.getUrlRoot()])) : false;
 						} catch(e){
-							typeof callback != 'undefined' ? callback(this.createResponseObject(400,false)) : false;
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
 						}
 					}
 					
@@ -770,17 +774,7 @@ var SMVP = (function(){
 			 */
 			Helper : (function(){
 				
-				function Helper(){
-				};
-				
-				Helper.prototype.guid = function() {
-					function s4() {
-						return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-					}
-					return function() {
-						return s4() + s4() + '-' + s4() + '-' + s4() + '-' +s4() + '-' + s4() + s4() + s4();
-					};
-				}
+				function Helper(){};
 				
 				Helper.prototype.uuid = function() {
 					var d = new Date().getTime();
@@ -846,6 +840,8 @@ var SMVP = (function(){
 				return AjaxHandler;
 			})()
 	}
+	
 	var _helper = new API.Helper();
+	
 	return API;
 })();
