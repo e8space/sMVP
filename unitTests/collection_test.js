@@ -140,7 +140,6 @@ Asynchronous_Collection_Test.prototype.test_post_should_return_collection = func
 	SMVP.userCollection.addModel(newUser2);
 	
 	callbackfunction = function(collection){
-		console.log("models:", collection.getModels());
 		actual = collection.getModels()["user1"].getId();
 	}
 	
@@ -158,15 +157,14 @@ Asynchronous_Collection_Test.prototype.test_post_should_return_collection = func
  * update
  */
 Asynchronous_Collection_Test.prototype.test_update_should_return_collection = function(queue){
-	var expected = true;
+	var expected = "Bianca";
 	var actual = null;
 	
 	SMVP.userCollection.addModel(newUser1);
 	SMVP.userCollection.addModel(newUser2);
 	
-	callbackfunction = function(response){
-		actual = response.data;
-		console.log("response.data:" ,response.data);
+	callbackfunction = function(collection){
+		actual = collection.getModels()["user1"].getName();
 	}
 	
 	queue.call("Step1: post collection", function(callbacks){

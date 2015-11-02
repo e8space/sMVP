@@ -18,8 +18,6 @@ var SMVP = (function(){
 				_dataGateway = dataGateway;
 			},
 			
-			
-			
 			/**
 			 * Model
 			 */
@@ -329,7 +327,6 @@ var SMVP = (function(){
 				Collection.prototype.update = function(callback){
 					var self = this;
 					_dataGateway.updateCollection(this, function(response){
-						console.log("response: ", response);
 						response.status == 200
 							? self.setCollection(response.data)
 							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"update collection failed"});
@@ -706,10 +703,12 @@ var SMVP = (function(){
 						try {
 							var resource = collection.getUrlRoot();
 							mockData[resource] = {};
+							var models = collection.getModels();
 							$.each(collection.getModels(), function(key,model){
-								console.log("modelGetId:", model.getId());
 								model.setId(resource+(Object.keys(mockData[resource]).length+1));
 								model.setLink(resource+"/"+model.getId());
+								delete models[key];
+								models[model.getId()]= model;
 								mockData[resource][model.getId()]= model;
 							});
 							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
@@ -739,11 +738,12 @@ var SMVP = (function(){
 					 */
 					this.updateCollection = function(collection, callback){
 						try {
-							mockData[collection.getUrlRoot()] = {};
-							$.each(collection.getCollection(), function(key,value){
-								mockData[collection.getUrlRoot()][key]= value;
+							var resource = collection.getUrlRoot();
+							mockData[resource] = {};
+							$.each(collection.getModels, function(key,model){
+								mockData[resource][key]= model;
 							});
-							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[collection.getUrlRoot()])) : false;
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
 						} catch(e){
 							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
 						}
