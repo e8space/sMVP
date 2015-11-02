@@ -567,44 +567,44 @@ var SMVP = (function(){
 				function DataGateway(ajaxHandler){
 					
 					this.postModel = function(model){
-						ajaxHandler.post(model.link,model,function(data){
-							return data;
+						ajaxHandler.post(model.link,model,function(response){
+							return response;
 						});
 					};
 					
 					this.fetchModel = function(model){
-						ajaxHandler.get(model.link, function(data){
-							return data;
+						ajaxHandler.get(model.link, function(response){
+							return response;
 						});
 					};
 					
 					this.updateModel = function(model){
-						ajaxHandler.put(model.link,model,function(data){
-							return data;
+						ajaxHandler.put(model.link,model,function(response){
+							return response;
 						});
 					};
 					
 					this.deleteModel = function(model){
-						ajaxHandler.destroy(model.link, function(data){
-							return data;
+						ajaxHandler.destroy(model.link, function(response){
+							return response;
 						});
 					};
 					
 					this.postCollection = function(collection){
-						ajaxHandler.post(collection.getUrlRoot(), collection, function(data){
-							return data;
+						ajaxHandler.post(collection.getUrlRoot(), collection, function(response){
+							return response;
 						});
 					};
 					
 					this.fetchCollection = function(collection) {
-						ajaxHandler.get(collection.getUrlRoot(), function(data){
-							return data;
+						ajaxHandler.get(collection.getUrlRoot(), function(response){
+							return response;
 						});
 					};
 					
 					this.deleteCollection = function(collection){
-						ajaxHandler.destroy(collection.getUrlRoot(), function(data){
-							return data;
+						ajaxHandler.destroy(collection.getUrlRoot(), function(response){
+							return response;
 						});
 					};
 				}
