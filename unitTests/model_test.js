@@ -7,10 +7,30 @@
 Model_test = TestCase("Model_test");
 Asynchronous_Model_Test = AsyncTestCase('Asynchronous_Model_Test');
 
+var mockData = mockData || {};
+
+
 /**
  * setUp
  */
 Model_test.prototype.setUp = function(){
+	
+	mockData.user = {};
+	
+	mockData.user.user1 = {
+			"id" : "user1",
+			"name" : "Charles",
+			"urlRoot" : "/user",
+			"link" : "/user/user1"
+	};
+
+	mockData.user.user2 = {
+			"id": "user2",
+			"name" : "Henry",
+			"urlRoot" : "/user",
+			"link" : "/user/user2"
+	};
+	
 	SMVP.setDataGateway(new SMVP.DataGatewayMock());
 
 	SMVP.userModel = new SMVP.Model({
@@ -24,6 +44,21 @@ Model_test.prototype.setUp = function(){
  * setUp
  */
 Asynchronous_Model_Test.prototype.setUp = function(){
+	
+	mockData.user.user1 = {
+			"id" : "user1",
+			"name" : "Charles",
+			"urlRoot" : "/user",
+			"link" : "/user/user1"
+	};
+
+	mockData.user.user2 = {
+			"id": "user2",
+			"name" : "Henry",
+			"urlRoot" : "/user",
+			"link" : "/user/user2"
+	};
+	
 	SMVP.setDataGateway(new SMVP.DataGatewayMock());
 
 	SMVP.userModel = new SMVP.Model({
@@ -104,7 +139,7 @@ Model_test.prototype.test_setJsonRepresentation = function(){
  * post
  */
 Asynchronous_Model_Test.prototype.test_post_should_return_model_with_id = function(queue){
-	var expected = "user6";
+	var expected = "user3";
 	var actual = null;
 	
 	callbackfunction = function(model){
@@ -129,9 +164,9 @@ Asynchronous_Model_Test.prototype.test_post_should_return_model_with_id = functi
  * fetch
  */
 Asynchronous_Model_Test.prototype.test_fetch_should_return_model = function(queue){
-	SMVP.userModel.setId("user3");
+	SMVP.userModel.setId("user2");
 	
-	var expected = "Abignale";
+	var expected = "Henry";
 	var actual = null;
 	
 	callbackfunction = function(model){
@@ -152,7 +187,7 @@ Asynchronous_Model_Test.prototype.test_fetch_should_return_model = function(queu
  * update
  */
 Asynchronous_Model_Test.prototype.test_update_model_should_return_model = function(queue){
-	SMVP.userModel.setId("user4")
+	SMVP.userModel.setId("user2")
 
 	var expected = "Diana";
 	var actual = null;

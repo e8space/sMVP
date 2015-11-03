@@ -28,20 +28,6 @@ mockData.user.user3 = {
 		"link" : "/user/user3"
 };
 
-mockData.user.user4 = {
-		"id": "user4",
-		"name" : "Dana",
-		"urlRoot" : "/user",
-		"link" : "/user/user4"
-};
-
-mockData.user.user5 = {
-		"id": "user5",
-		"name" : "Erwin",
-		"urlRoot" : "/user",
-		"link" : "/user/user5"
-};
-
 
 
 

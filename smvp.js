@@ -130,7 +130,7 @@ var SMVP = (function(){
 							_dataGateway.postModel(this.getObjectRepresentation(), function(response){
 								response.status == 201 
 									? self.updatePropertiesAndAccessors(response.data) 
-									: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post model failed"});
+									: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 								typeof callback!= 'undefined' ? callback (self) : false;
 							});
 						} catch (e){
@@ -148,7 +148,7 @@ var SMVP = (function(){
 			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(response){
 			        			response.status == 200
 			        				? self.updatePropertiesAndAccessors(response.data)
-			        				:  $(document).trigger("dataGatewayError", {statusCode:response.status, message:"fetch model failed"});
+			        				:  $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 				        		typeof callback!= 'undefined' ? callback (self) : false;
 			        		});
 			        	} catch (e){
@@ -166,7 +166,7 @@ var SMVP = (function(){
 			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(response){
 			            		response.status == 200
 			            			? true
-			            			: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"update model failed"});
+			            			: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 			            		typeof callback!= 'undefined' ? callback (self) : false;
 			            	});
 			            } catch (e){
@@ -183,7 +183,7 @@ var SMVP = (function(){
 							_dataGateway.deleteModel(this.getObjectRepresentation(),function(response){
 								response.status == 200
 								? self = null
-								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"destroy model failed"});
+								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 							});
 						} catch (e) {
 			                console.log(e); 
@@ -714,7 +714,7 @@ var SMVP = (function(){
 							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
 						} catch(e){
 							console.log(e);
-							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,'post collection failed')) : false;
 						}
 					};
 					
@@ -727,7 +727,7 @@ var SMVP = (function(){
 							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[collection.getUrlRoot()])) : false;
 						} catch(e){
 							console.log(e);
-							typeof callback != 'undefined' ? callback (this.createResponseObject(400,null)) : false;
+							typeof callback != 'undefined' ? callback (this.createResponseObject(400,'fetch collection failed')) : false;
 						}
 					
 					};
@@ -745,7 +745,7 @@ var SMVP = (function(){
 							});
 							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
 						} catch(e){
-							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,'update collection failed')) : false;
 						}
 					}
 					

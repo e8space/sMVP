@@ -7,6 +7,9 @@
 Collection_test = TestCase("Collection_test");
 Asynchronous_Collection_Test = AsyncTestCase('Asynchronous_Collection_Test');
 
+var mockData = mockData || {};
+mockData.user = {};
+
 /**
  * setUp
  */
@@ -14,26 +17,29 @@ Collection_test.prototype.setUp = function(){
 	SMVP.setDataGateway(new SMVP.DataGatewayMock());
 	
 	model = new SMVP.Model({id:"", name:"", urlRoot:"/user", link:""});
+	newModel = new SMVP.Model({id:"", name:"", urlRoot:"/newUser", link:""});
 	falseModel = new SMVP.Model({id:"", name:"", age:"", urlRoot:"", link:""});
 	user1 = model.clone().setName("Lucy").setId("001");
 	user2 = model.clone().setName("Bart").setId("100");
 	
-	newUser1 = model.clone().setName("newUser1");
-	newUser2 = model.clone().setName("newUser2");
-	cut = new SMVP.Collection(model);
+	newUser1 = newModel.clone().setName("newUser1");
+	newUser2 = newModel.clone().setName("newUser2");
+	
+	cut = new SMVP.Collection(newModel);
 };
 
 Asynchronous_Collection_Test.prototype.setUp = function(){
 	SMVP.setDataGateway(new SMVP.DataGatewayMock());
 	
 	model = new SMVP.Model({id:"", name:"", urlRoot:"/user", link:""});
+	newModel = new SMVP.Model({id:"", name:"", urlRoot:"/newUser", link:""});
 	falseModel = new SMVP.Model({id:"", name:"", age:"", urlRoot:"", link:""});
 	user1 = model.clone().setName("Lucy").setId("001");
 	user2 = model.clone().setName("Bart").setId("100");
 	
-	newUser1 = model.clone().setName("newUser1");
-	newUser2 = model.clone().setName("newUser2");
-	SMVP.userCollection = new SMVP.Collection(model);
+	newUser1 = newModel.clone().setName("newUser1");
+	newUser2 = newModel.clone().setName("newUser2");
+	SMVP.userCollection = new SMVP.Collection(newModel);
 }
 
 
@@ -140,7 +146,7 @@ Asynchronous_Collection_Test.prototype.test_post_should_return_collection = func
 	SMVP.userCollection.addModel(newUser2);
 	
 	callbackfunction = function(collection){
-		actual = collection.getModels()["user1"].getId();
+		actual = collection.getModels()["newUser1"].getId();
 	}
 	
 	queue.call("Step1: post collection", function(callbacks){
@@ -164,7 +170,7 @@ Asynchronous_Collection_Test.prototype.test_update_should_return_collection = fu
 	SMVP.userCollection.addModel(newUser2);
 	
 	callbackfunction = function(collection){
-		actual = collection.getModels()["user1"].getName();
+		actual = collection.getModels()["newUser1"].getName();
 	}
 	
 	queue.call("Step1: post collection", function(callbacks){
