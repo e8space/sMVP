@@ -16,6 +16,7 @@ $(document).ready(function() {
 		.renderView(undefined, contentPresenter);
 	
 	contentPresenter.contentForm_event= function(e){
+		console.log("contentForm_event:", e);
 		this.getSubTriads().contentFormPresenter.getModel().getData().getMutable()[e.element.target.id]=e.element.target.value;
 	};
 	

@@ -11,6 +11,7 @@ var SMVP = (function(){
 		return this.charAt(0).toUpperCase() + this.substr(1);
 	};	
 	
+	
 	var API = {
 			
 			setDataGateway : function(dataGateway){
@@ -40,6 +41,8 @@ var SMVP = (function(){
 							
 							self["set"+obj.ucfirst()] = function(value){
 								self.properties[cObj] = value;
+								$(document).trigger("modelChanged",self);
+								
 								return this;
 							};
 							
@@ -73,7 +76,6 @@ var SMVP = (function(){
 					 * @returns {Model}
 					 */
 					clone : function(){
-						console.log('clone');
 						return new SMVP.Model(this.getObjectRepresentation());
 					},	
 					
@@ -125,9 +127,10 @@ var SMVP = (function(){
 			        post: function(callback){
 						try {
 							var self = this;
-							_dataGateway.postModel(this.getObjectRepresentation(), function(json){
-								self.updatePropertiesAndAccessors(json);
-								$(document).trigger("modelChanged_"+self.getId(), {model:self});
+							_dataGateway.postModel(this.getObjectRepresentation(), function(response){
+								response.status == 201 
+									? self.updatePropertiesAndAccessors(response.data) 
+									: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 								typeof callback!= 'undefined' ? callback (self) : false;
 							});
 						} catch (e){
@@ -142,9 +145,11 @@ var SMVP = (function(){
 			        fetch : function(callback){
 			        	try {
 			        		var self = this;
-			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(json){
-			        			self.updatePropertiesAndAccessors(json);
-			        			typeof callback!= 'undefined' ? callback (self) : false;
+			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(response){
+			        			response.status == 200
+			        				? self.updatePropertiesAndAccessors(response.data)
+			        				:  $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
+				        		typeof callback!= 'undefined' ? callback (self) : false;
 			        		});
 			        	} catch (e){
 			        		console.log(e);
@@ -159,7 +164,9 @@ var SMVP = (function(){
 			            try {
 			            	var self = this;
 			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(response){
-			            		$(document).trigger("modelChanged_"+self.getId(), {model:self});
+			            		response.status == 200
+			            			? true
+			            			: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 			            		typeof callback!= 'undefined' ? callback (self) : false;
 			            	});
 			            } catch (e){
@@ -169,12 +176,14 @@ var SMVP = (function(){
 
 			        /**
 			         * @hint destroy model
-			         * @returns true or undefined
 			         */
 					destroy : function(){
 						try {
-							_dataGateway.deleteModel(this.getObjectRepresentation(),function(isModelDestroyed){
-								return isModelDestroyed;
+							var self = this;
+							_dataGateway.deleteModel(this.getObjectRepresentation(),function(response){
+								response.status == 200
+								? self = null
+								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
 							});
 						} catch (e) {
 			                console.log(e); 
@@ -202,7 +211,6 @@ var SMVP = (function(){
 					var _keys = Object.keys(model.getObjectRepresentation()).sort();
 					
 					$(document).bind("modelPosted", function(o,data){
-						console.log("mockData", mockData);
 					})
 					
 					/**
@@ -211,11 +219,18 @@ var SMVP = (function(){
 					 * @returns Boolean
 					 */
 					this.addModel = function(model){
-						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()))) {
-							_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
-							_models[model.getObjectRepresentation().id] = new SMVP.Model(model.getJsonRepresentation())
+						
+						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()).sort())) {
+							if (model.getObjectRepresentation().id != "") {
+								_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
+								_models[model.getObjectRepresentation().id] = model;
+							} else {
+								model.setId(_helper.uuid());
+								_collection[model.getId()] = model.getObjectRepresentation();
+								_models[model.getId()] = model;
+							}
 							return true;
-						}
+						}	
 						return false;	
 					};
 							
@@ -225,9 +240,19 @@ var SMVP = (function(){
 					 * @returns model
 					 */
 					this.readModel = function(id){
-						return new Model(_collection[id]);
-						
+						if (typeof _models[id] == 'undefined') {
+							typeof _collection[id] != 'undefined' ? _models[id] = new SMVP.Model(_collection[id]) : false;
+						}
+						return _models[id];
 					};
+					
+					/**
+					 * @hint get models
+					 * @return models
+					 */
+					this.getModels = function(){
+						return _models;
+					}
 					
 					/**
 					 * @hint read models
@@ -268,25 +293,56 @@ var SMVP = (function(){
 				}
 				
 				/**
+				 * @hint post collection
+				 */
+				Collection.prototype.post = function(callback){
+					var self = this;
+					_dataGateway.postCollection(this, function(response){
+						console.log("response:", response);
+						response.status == 200
+							? self.setCollection(response.data)	
+							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
+						typeof callback !='undefined' ? callback(self) : false;
+					});
+				};
+				
+				/**
 				 * @hint fetch collection
 				 * @returns collection
 				 */
-				Collection.prototype.fetch = function(){
-					var collection = {};
-					var data = _dataGateway.fetchCollection(this);
-					$.each(data,function(key,value){
-						collection[key]= value;
+				Collection.prototype.fetch = function(callback){
+					var self = this;
+					_dataGateway.fetchCollection(this, function(response){
+						response.status == 200
+							? self.setCollection(response.data)
+							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"fetch collection failed"});
+						typeof callback != 'undefined' ? callback(self) : false;
 					});
-					this.setCollection (collection);
-					return this.getCollection();
 				};
 					
 				/**
-				 * @hint post collection
+				 * @hint update collection
+				 * @returns collection
 				 */
-				Collection.prototype.post = function(){
-					smvp.dataGateway.postCollection(this);
-				};
+				Collection.prototype.update = function(callback){
+					var self = this;
+					_dataGateway.updateCollection(this, function(response){
+						response.status == 200
+							? self.setCollection(response.data)
+							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"update collection failed"});
+						typeof callback !='undefined' ? callback(self) : false;
+					});
+				}
+				
+				/**
+				 * @hint delete collection
+				 * @return response code
+				 */
+				Collection.prototype.delete = function(callback){
+					_dataGateway.deleteCollection(this, function(){
+						typeof callback !='undefined' ? callback(self) : false;
+					});
+				}
 					
 				return Collection;
 			})(),
@@ -511,44 +567,44 @@ var SMVP = (function(){
 				function DataGateway(ajaxHandler){
 					
 					this.postModel = function(model){
-						ajaxHandler.post(model.link,model,function(data){
-							return data;
+						ajaxHandler.post(model.link,model,function(response){
+							return response;
 						});
 					};
 					
 					this.fetchModel = function(model){
-						ajaxHandler.get(model.link, function(data){
-							return data;
+						ajaxHandler.get(model.link, function(response){
+							return response;
 						});
 					};
 					
 					this.updateModel = function(model){
-						ajaxHandler.put(model.link,model,function(data){
-							return data;
+						ajaxHandler.put(model.link,model,function(response){
+							return response;
 						});
 					};
 					
 					this.deleteModel = function(model){
-						ajaxHandler.destroy(model.link, function(data){
-							return data;
+						ajaxHandler.destroy(model.link, function(response){
+							return response;
 						});
 					};
 					
 					this.postCollection = function(collection){
-						ajaxHandler.post(collection.getUrlRoot(), collection, function(data){
-							return data;
+						ajaxHandler.post(collection.getUrlRoot(), collection, function(response){
+							return response;
 						});
 					};
 					
 					this.fetchCollection = function(collection) {
-						ajaxHandler.get(collection.getUrlRoot(), function(data){
-							return data;
+						ajaxHandler.get(collection.getUrlRoot(), function(response){
+							return response;
 						});
 					};
 					
 					this.deleteCollection = function(collection){
-						ajaxHandler.destroy(collection.getUrlRoot(), function(data){
-							return data;
+						ajaxHandler.destroy(collection.getUrlRoot(), function(response){
+							return response;
 						});
 					};
 				}
@@ -567,18 +623,31 @@ var SMVP = (function(){
 				 */
 				function DataGatewayMock(ajaxHandler){
 					
+					this.createResponseObject = function(responseCode,data){
+						return  {
+							"status" : responseCode,
+							"data" : data
+						};
+					};
+					
 					/**
 					 * @hint post model
 					 * @param model
 					 */
 					this.postModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						var id = resource+(Object.keys(mockData[resource]).length+1);
+						try {
+							var resource = model.urlRoot.split('/')[1];
+							var id = resource+(Object.keys(mockData[resource]).length+1);
+							
+							model.id = id;
+							model.link = model.urlRoot+"/"+id;
+							mockData[resource][id]=model;
 						
-						model.id = id;
-						model.link = model.urlRoot+"/"+id;
-						mockData[resource][id]=model;
-						callback(mockData[resource][id]);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(201,mockData[resource][id])) : false;
+						} catch(e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+						}
 					};
 					
 					/**
@@ -586,8 +655,13 @@ var SMVP = (function(){
 					 * @param model
 					 */
 					this.fetchModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						callback(mockData[resource][model.id]);
+						try {
+							var resource = model.urlRoot.split('/')[1];
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource][model.id])) : false;
+						} catch (e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+						}
 					};
 					
 					/**
@@ -595,10 +669,14 @@ var SMVP = (function(){
 					 * @param model
 					 */
 					this.updateModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						var id = model.id;
-						mockData[resource][id] = model;
-						callback (mockData[resource][model.id]);
+						try {
+							var resource = model.urlRoot.split('/')[1];
+							mockData[resource][model.id] = model;
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource][model.id])) : false;
+						} catch(e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+						}
 					};
 					
 					/**
@@ -606,10 +684,15 @@ var SMVP = (function(){
 					 * @param model
 					 */
 					this.deleteModel = function(model,callback){
-						var resource = model.urlRoot.split('/')[1];
-						var id = model.id;
-						delete mockData[resource][id];
-						callback(true);
+						try {
+							var resource = model.urlRoot.split('/')[1];
+							var id = model.id;
+							delete mockData[resource][id];
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,null)) : false;
+						} catch (e) {
+							console.log(e);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,null)) : false;
+						}
 					};
 					
 					/**
@@ -617,10 +700,22 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.postCollection = function(collection, callback){
-						$.each(collection.getCollection(), function(key,value){
-							mockData[collection.getUrlRoot()][key]= value;
-						});
-						callback(true);
+						try {
+							var resource = collection.getUrlRoot();
+							mockData[resource] = {};
+							var models = collection.getModels();
+							$.each(collection.getModels(), function(key,model){
+								model.setId(resource+(Object.keys(mockData[resource]).length+1));
+								model.setLink(resource+"/"+model.getId());
+								delete models[key];
+								models[model.getId()]= model;
+								mockData[resource][model.getId()]= model;
+							});
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
+						} catch(e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,'post collection failed')) : false;
+						}
 					};
 					
 					/**
@@ -628,16 +723,44 @@ var SMVP = (function(){
 					 * @param collection
 					 */
 					this.fetchCollection = function(collection, callback) {
-						callback(mockData[collection.getUrlRoot()]);
+						try {
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[collection.getUrlRoot()])) : false;
+						} catch(e){
+							console.log(e);
+							typeof callback != 'undefined' ? callback (this.createResponseObject(400,'fetch collection failed')) : false;
+						}
+					
 					};
+					
+					/**
+					 * @update collection
+					 * @param collection
+					 */
+					this.updateCollection = function(collection, callback){
+						try {
+							var resource = collection.getUrlRoot();
+							mockData[resource] = {};
+							$.each(collection.getModels, function(key,model){
+								mockData[resource][key]= model;
+							});
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,mockData[resource])) : false;
+						} catch(e){
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,'update collection failed')) : false;
+						}
+					}
 					
 					/**
 					 * @hint delete collection
 					 * @param collection
 					 */
-					this.deleteCollection = function(collection,callback){
-						delete mockData[collection.getUrlRoot()];
-						callback(true);
+					this.deleteCollection = function(collection, callback){
+						try {
+							delete mockData[collection.getUrlRoot()];
+							typeof callback != 'undefined' ? callback(this.createResponseObject(200,true)) : false;
+						} catch(e) {
+							console.log(e); 
+							typeof callback != 'undefined' ? callback(this.createResponseObject(400,false)) : false;
+						}
 					};
 				}
 				
@@ -651,39 +774,18 @@ var SMVP = (function(){
 			 */
 			Helper : (function(){
 				
-				function Helper(){
-					
-					/**
-					 * first char to upper case
-					 */
-					String.prototype.ucfirst = function(){
-						return this.charAt(0).toUpperCase() + this.substr(1);
-					};
-					
-					guid = (function() {
-						  function s4() {
-						    return Math.floor((1 + Math.random()) * 0x10000)
-						               .toString(16)
-						               .substring(1);
-						  }
-						  return function() {
-						    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-						           s4() + '-' + s4() + s4() + s4();
-						  };
-					})();
+				function Helper(){};
 				
-					
-					uuid = function() {
-						var d = new Date().getTime();
-					    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-					        var r = (d + Math.random()*16)%16 | 0;
-					        d = Math.floor(d/16);
-					        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
-					    });
-					    return uuid;
-					};
-				}
-					
+				Helper.prototype.uuid = function() {
+					var d = new Date().getTime();
+				    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				        var r = (d + Math.random()*16)%16 | 0;
+				        d = Math.floor(d/16);
+				        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
+				    });
+				    return uuid;
+				};
+				
 				return Helper;
 			})(),
 
@@ -738,6 +840,8 @@ var SMVP = (function(){
 				return AjaxHandler;
 			})()
 	}
+	
+	var _helper = new API.Helper();
 	
 	return API;
 })();
