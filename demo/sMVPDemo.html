@@ -80,8 +80,19 @@
 			<tbody>
 				<%$.each(getData().getCollection(),function(key,value){%>
 					<tr>
-						<%$.each(this, function(key,value){%>	
-							<td><%=value%></td>
+						<%$.each(this, function(key,value){%>
+							<%if (typeof (value) == "object"){%>
+								<td>
+									<%$.each(this, function(key,value){%>
+										<p>
+											<%=key%> :
+											<%=value%>
+										</p>
+									<%})%>
+								</td>
+							<%} else {%>
+								<td><%=value%></td>
+							<%}%>
 						<%})%>
 					</tr>
 				<%})%>

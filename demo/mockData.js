@@ -9,37 +9,52 @@ mockData.user = {};
 
 mockData.user.user1 = {
 		"id" : "user1",
-		"name" : "Charles",
 		"urlRoot" : "/user",
-		"link" : "/user/user1"
+		"link" : "/user/user1",
+		"mutable" : {
+			"name" : "Charles",
+			"gender" : "m"
+		}
 };
 
 mockData.user.user2 = {
 		"id": "user2",
-		"name" : "Henry",
 		"urlRoot" : "/user",
-		"link" : "/user/user2"
+		"link" : "/user/user2",
+		"mutable" : {
+			"name" : "Henry",
+			"gender" : "m"
+		}
 };
 
 mockData.user.user3 = {
 		"id": "user3",
-		"name" : "Abignale",
 		"urlRoot" : "/user",
-		"link" : "/user/user3"
+		"link" : "/user/user3",
+		"mutable" : {
+			"name" : "Abignale",
+			"gender" : "f"
+		}
 };
 
 mockData.user.user4 = {
 		"id": "user4",
-		"name" : "Dana",
 		"urlRoot" : "/user",
-		"link" : "/user/user4"
+		"link" : "/user/user4",
+		"mutable" : {
+			"name" : "Dana",
+			"gender" : "f"
+		}
 };
 
 mockData.user.user5 = {
 		"id": "user5",
-		"name" : "Erwin",
 		"urlRoot" : "/user",
-		"link" : "/user/user5"
+		"link" : "/user/user5",
+		"mutable" : {
+			"name" : "Erwin",
+			"gender" : "m"
+		}
 };
 
 

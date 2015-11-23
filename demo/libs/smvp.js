@@ -475,7 +475,7 @@ var SMVP = (function(){
 			    		$('#'+dataId).off(event);
 			    		if (typeof (event) != 'undefined') {
 			    			$('#'+dataId).on(event,function(element){
-			    				base[dataId+"_event"]({element:element,value:$('#'+dataId).val()});
+			    				base[dataId+"_event"]({element:element,value:$('#'+dataId).val(), targetValue:element.target.value});
 			         		});
 			         	};
 			      		return this;
