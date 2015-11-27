@@ -31,6 +31,7 @@ var SMVP = (function(){
 				
 					var self =this;
 			        this.properties	= properties || {};
+			        this.cleanProperties = $.extend(true,{},properties);
 
 					//define accessors according to properties
 					this.setGettersSetters = function(data){
@@ -77,7 +78,15 @@ var SMVP = (function(){
 					 */
 					clone : function(){
 						return new SMVP.Model(this.getObjectRepresentation());
-					},	
+					},
+					
+					/**
+					 * @hint create new instance without values
+					 * @return {Model}
+					 */
+					cloneClean : function(){
+						return new SMVP.Model(this.cleanProperties);
+					},
 					
 					/**
 					 * @hint get model properties as object
@@ -203,15 +212,13 @@ var SMVP = (function(){
 				 * @constructor
 				 * @param model
 				 */
-				function Collection(model){
+				function Collection(model,name){
 				
 					var _urlRoot = model.getUrlRoot().split('/')[1];
+					var _name = name;
 					var _collection = {};
 					var _models = {};
 					var _keys = Object.keys(model.getObjectRepresentation()).sort();
-					
-					$(document).bind("modelPosted", function(o,data){
-					})
 					
 					/**
 					 * @hint add model
@@ -219,7 +226,6 @@ var SMVP = (function(){
 					 * @returns Boolean
 					 */
 					this.addModel = function(model){
-						
 						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()).sort())) {
 							if (model.getObjectRepresentation().id != "") {
 								_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
@@ -229,6 +235,8 @@ var SMVP = (function(){
 								_collection[model.getId()] = model.getObjectRepresentation();
 								_models[model.getId()] = model;
 							}
+							
+							$(document).trigger("collectionChanged_"+_name, this);
 							return true;
 						}	
 						return false;	
@@ -298,7 +306,6 @@ var SMVP = (function(){
 				Collection.prototype.post = function(callback){
 					var self = this;
 					_dataGateway.postCollection(this, function(response){
-						console.log("response:", response);
 						response.status == 200
 							? self.setCollection(response.data)	
 							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
@@ -338,7 +345,7 @@ var SMVP = (function(){
 				 * @hint delete collection
 				 * @return response code
 				 */
-				Collection.prototype.delete = function(callback){
+				Collection.prototype.destroy = function(callback){
 					_dataGateway.deleteCollection(this, function(){
 						typeof callback !='undefined' ? callback(self) : false;
 					});
@@ -372,7 +379,7 @@ var SMVP = (function(){
 					this.getModel = function(){
 						return _model;
 					}; 
-					
+				
 					$(_container).empty();
 			    }
 				    
@@ -407,13 +414,18 @@ var SMVP = (function(){
 			        show : function(){
 			        	$("#"+this.getContainer()).show();
 			        },
+			        
+			        refresh : function(data,callback){
+			        	$("[id^="+this.getContainer()+"]").find("input").val("");
+			        	typeof(callback) !='undefined' ? callback() : false;
+			        },
 
 			        /**
 			         * @hint destroy view
 			         */
-			        destroy : function(){
+			        destroy : function(callback){
 			            $("#"+this.getContainer()).off().empty();
-			        	$.publish("viewDestroyed_"+this.getContainer());
+			        	typeof(callback) !='undefined' ? callback() : false;
 			        }
 			    };
 
@@ -460,6 +472,11 @@ var SMVP = (function(){
 			        $(document).bind("modelChanged_"+self.getModel().getId(), function(o,data){
 			            self.renderView.call();
 			        });
+			        
+			        $(document).bind("collectionChanged_"+self.getModel().getId(), function(o,data){
+			        	self.renderView();
+			        });
+			    	
 			    }
 			        
 			    Presenter.prototype = {
@@ -488,7 +505,7 @@ var SMVP = (function(){
 			        removeEventDelegate : function(){
 			        	var dataId=this.getModel().getId();
 			        	var event = $('[data-id='+dataId+']').attr('data-event');
-			        	$('[data-id='+dataId+']').off(event, self.handler);
+			        	$('#'+dataId).off(event);
 			        },
 
 			    	/**
@@ -499,8 +516,7 @@ var SMVP = (function(){
 			    	 */
 					renderView : function(callback,base){
 						var self = this;
-						var basePresenter = base || self;
-						
+						var basePresenter = base;
 			    		this.getView().render(this.getModel(), function(){
 			    			self.setEventDelegate(basePresenter);
 			        		var subTriads = self.getSubTriads();
@@ -540,15 +556,37 @@ var SMVP = (function(){
 			    	/**
 			    	 * @hint deletes view and related subviews and handlers
 			    	 */
-			    	destroyView : function(){
+			    	destroyView : function(callback){
 			    		var self = this;
 			    		var subTriads = self.getSubTriads();
-			    		for (triad in subTriads) {
-			    			self[subTriads[triad]+'_presenter'].destroyView();
-			    		};
+			    		/*for (triad in subTriads) {
+			    			subTriads[triad].destroyView();
+			    		};*/
 			    		self.removeEventDelegate();
 			    		this.getView().destroy();
-			    		$(document).trigger("destroyView_"+this.getModel().getId());
+			    		typeof(callback) !='undefined' ? callback() : false;
+			    	}, 
+			    	
+			    	/**
+			    	 * @hint refreshs view
+			    	 */
+			    	refreshView : function(callback){
+			    		var self = this;	
+			    		this.getView().refresh(this.getModel(), function(){
+			    			var subTriads = self.getSubTriads();
+			    			var subTriadsSize = Object.keys(subTriads).length;
+			        		if (subTriadsSize == 0 && typeof callback != 'undefined') {
+			        			callback();
+			        		}
+			    			for (var triad in subTriads)(function() {
+			    				subTriads[triad].refreshView( function(){
+			        				subTriadsSize --;		
+			        			});
+			        			if (subTriadsSize == 0 && typeof callback != 'undefined') {
+				        			callback();
+				        		}
+			    			})();
+			    		})
 			    	}
 			    };
 			    

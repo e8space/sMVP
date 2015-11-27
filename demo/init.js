@@ -8,18 +8,30 @@ $(document).ready(function() {
 	SMVP.setDataGateway(new SMVP.DataGatewayMock());
 	SMVP.userCollection.fetch();
 	
-	var headerPresenter = new SMVP.Presenter(new SMVP.View(SMVP.headerViewModel),SMVP.headerViewModel)
-		.renderView(undefined, headerPresenter);
+	SMVP.headerPresenter = new SMVP.Presenter(new SMVP.View(SMVP.headerViewModel),SMVP.headerViewModel);
+	SMVP.headerPresenter.renderView(undefined, SMVP.headerPresenter);
 
-	var contentPresenter = new SMVP.Presenter(new SMVP.View(SMVP.contentViewModel),SMVP.contentViewModel)
-		.renderView(undefined, contentPresenter);
+	SMVP.contentPresenter = new SMVP.Presenter(new SMVP.View(SMVP.contentViewModel),SMVP.contentViewModel);
+	SMVP.contentPresenter.renderView(undefined, SMVP.contentPresenter);
 	
-	contentPresenter.contentForm_event= function(e){
+	SMVP.contentPresenter.contentForm_event= function(e){
 		this.getSubTriads().contentFormPresenter.getModel().getData().getMutable()[e.element.target.id]=e.targetValue;
 	};
 	
-	contentPresenter.submitButton_event = function(e){
-		this.getSubTriads().contentFormPresenter.getModel().getData().post(function(){
+	SMVP.contentPresenter.contentStock_event = function(e){
+		console.log("editButtonEvent",e.element.target.offsetParent.id);
+	}
+	
+	SMVP.contentPresenter.submitButton_event = function(e){
+		//console.log("SMVP.userCollection:", SMVP.userCollection.getCollection());
+		
+		this.getSubTriads().contentFormPresenter.getModel().getData().post(function(response){
+			var model = SMVP.contentPresenter.getSubTriads().contentFormPresenter.getModel();
+			model.setData(response);
+			model.setData(model.getData().cloneClean());
+			SMVP.contentPresenter.destroyView(function(){
+				SMVP.contentPresenter.renderView(undefined, SMVP.contentPresenter);
+			});
 		});
 	}
 });

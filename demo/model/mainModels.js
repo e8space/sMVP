@@ -5,20 +5,22 @@
 var MainModels = (function(){
 	
 		SMVP.userModel = new SMVP.Model({
-			urlRoot : "/user",
 			id : "",
+			urlRoot : "/user",
+			link : "",
 			mutable : {
-				name : ""
+				name : "",
+				gender :""
 			}
 		});
 		
-		SMVP.userCollection = new SMVP.Collection(SMVP.userModel);
-		
+		SMVP.userCollection = new SMVP.Collection(SMVP.userModel,"contentStock");
 		
 		SMVP.headerViewModel = new SMVP.Model({
 			id:"headerView",
 			template:"headerViewTemplate",
 			container:"header",
+			data : null,
 			subTriads : ['headerText']
 		});
 		
@@ -33,6 +35,7 @@ var MainModels = (function(){
 			id:"contentView",
 			template : "contentViewTemplate",
 			container : "content",
+			data : null,
 			subTriads : ['contentForm','submitButton','contentStock']
 		});
 		
@@ -48,9 +51,17 @@ var MainModels = (function(){
 			id:"contentStock",
 			template:"contentStockTemplate",
 			container:"contentStockContainer",
-			data:SMVP.userCollection
+			data:SMVP.userCollection,
+			subTriads : ['editButton']
 		})
 		
+		SMVP.editButtonModel = new SMVP.Model({
+			id:"editButton",
+			template:"editButtonTemplate",
+			container:"editButtonContainer",
+			data:"edit"
+			
+		});
 		
 		SMVP.submitButtonModel = new SMVP.Model({
 			id:"submitButton",
