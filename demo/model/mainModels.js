@@ -52,7 +52,15 @@ var MainModels = (function(){
 			template:"contentStockTemplate",
 			container:"contentStockContainer",
 			data:SMVP.userCollection,
-			subTriads : ['editButton']
+			subTriads : ['editButton','deleteButton']
+		})
+		
+		SMVP.contentEditViewModel = new SMVP.Model({
+			id:"contentEdit",
+			template:"contentEditTemplate",
+			container:"content",
+			subTriads:[],
+			data : SMVP.userModel
 		})
 		
 		SMVP.editButtonModel = new SMVP.Model({
@@ -60,8 +68,15 @@ var MainModels = (function(){
 			template:"editButtonTemplate",
 			container:"editButtonContainer",
 			data:"edit"
-			
 		});
+		
+		SMVP.deleteButtonModel = new SMVP.Model({
+			id:"deleteButton",
+			template:"deleteButtonTemplate",
+			container:"deleteButtonContainer",
+			data:"delete"
+		});
+		
 		
 		SMVP.submitButtonModel = new SMVP.Model({
 			id:"submitButton",

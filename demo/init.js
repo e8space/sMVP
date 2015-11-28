@@ -15,20 +15,26 @@ $(document).ready(function() {
 	SMVP.contentPresenter.renderView(undefined, SMVP.contentPresenter);
 	
 	SMVP.contentPresenter.contentForm_event= function(e){
+		
 		this.getSubTriads().contentFormPresenter.getModel().getData().getMutable()[e.element.target.id]=e.targetValue;
 	};
 	
 	SMVP.contentPresenter.contentStock_event = function(e){
-		console.log("editButtonEvent",e.element.target.offsetParent.id);
+		var splitActionValue = e.element.target.offsetParent.id.split('_');
+		if (splitActionValue[0] == "deleteButtonContainer") {
+			console.log("delete");
+		}
+	
+		
 	}
 	
 	SMVP.contentPresenter.submitButton_event = function(e){
-		//console.log("SMVP.userCollection:", SMVP.userCollection.getCollection());
-		
+	
 		this.getSubTriads().contentFormPresenter.getModel().getData().post(function(response){
 			var model = SMVP.contentPresenter.getSubTriads().contentFormPresenter.getModel();
 			model.setData(response);
 			model.setData(model.getData().cloneClean());
+			
 			SMVP.contentPresenter.destroyView(function(){
 				SMVP.contentPresenter.renderView(undefined, SMVP.contentPresenter);
 			});

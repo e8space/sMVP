@@ -36,7 +36,7 @@ var SMVP = (function(){
 					//define accessors according to properties
 					this.setGettersSetters = function(data){
 					
-						jQuery.extend(self.properties, data);
+						jQuery.extend(true, self.properties, data);
 						for (var obj in data){ (function(){
 							var cObj = obj;
 							
@@ -56,7 +56,7 @@ var SMVP = (function(){
 					
 					//update properties and accessors according to json
 					this.updatePropertiesAndAccessors = function(json){
-						jQuery.extend(self.properties, json);
+						jQuery.extend(true,self.properties, json);
 	        			$.each(json, function(key,value){
 							if(typeof self["get"+key.ucfirst()] == 'undefined') {
 								var obj = {};
@@ -680,7 +680,7 @@ var SMVP = (function(){
 							model.id = id;
 							model.link = model.urlRoot+"/"+id;
 							mockData[resource][id]=model;
-						
+								
 							typeof callback != 'undefined' ? callback(this.createResponseObject(201,mockData[resource][id])) : false;
 						} catch(e){
 							console.log(e);
