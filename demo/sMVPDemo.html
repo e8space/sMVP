@@ -22,9 +22,9 @@
 	</head>
 
 	<body>
-		<div id="header" class="row"> </div>
-		<div id="content" class="row"> </div>
-		<div id="footer" class="row"> </div>
+		<div id="header" data-container="header" class="row"> </div>
+		<div id="content" data-container="content" class="row"> </div>
+		<div id="footer" data-container="footer" class="row"> </div>
 	</body>
 	
 
@@ -32,7 +32,8 @@
 
 	<!-- headerViewTemplate -->
 	<script type="text/x-template" id="headerViewTemplate">
-		<div id="headerTextContainer" class="col-md-12"></div>
+		<div id="headerTextContainer" data-container="headerTextContainer" class="col-md-12"></div>
+		
 	</script>
 	
 	<!-- headerTextTemplate -->
@@ -42,8 +43,10 @@
 	
 	<!-- contentViewTemplate -->
 	<script type="text/x-template" id="contentViewTemplate">
-		<div id="contentStockContainer" class="col-md-6"></div>	
-		<div id="contentFormContainer" class="col-md-6"></div>
+		<div id="contentStockContainer" data-container="contentStockContainer" class="col-md-6"></div>
+		<div id="editContent" data-container="editContent" class="col-md-6"> </div>
+		<div id="contentFormContainer" data-container="contentFormContainer" class="col-md-6"></div>
+		
 	</script>
 	
 	<!-- contentFormTemplate -->
@@ -58,7 +61,7 @@
 					</div>
 				</div>
 			<%}%>
-			<div id="submitButtonContainer"></div>
+			<div id="submitButtonContainer" data-container="submitButtonContainer"></div>
 		</form>
 	</script>
 	
@@ -95,8 +98,8 @@
 							
 						<%})%>
 						<td>
-							<div id="editButtonContainer_<%=key%>" class="col-xs-12"></div>
-							<div id="deleteButtonContainer_<%=key%>" class="col-xs-12"></div>
+							<div id="editButtonContainer_<%=key%>" data-container="editButtonContainer" class="col-xs-12"></div>
+							<div id="deleteButtonContainer_<%=key%>" data-container="deleteButtonContainer" class="col-xs-12"></div>
 						</td>
 					</tr>
 				<%})%>
@@ -105,9 +108,20 @@
 	</script>
 	
 	<!-- contentEditTemplate -->
-	<script type="text/x-template" id="contentEditTemplate">
-		<div class="">
-			
+	<script type="text/x-template" id="contentEditViewTemplate">
+		<div>
+			<h3 class="col-xs-12 paragraph">edit <%=getData().getId()%></h3>
+			<%$.each(getData().getMutable(), function(key, value){%>
+				<div class="form-group-xs">
+					<label class="col-xs-3" ><%=key%>:</label>
+					 <div class="col-xs-9">
+						<input id="<%=key%>" class="form-control input-sm" type ="text" value="<%=value%>"><br>
+					</div>
+				</div>
+			<%})%>
+			<div class="col-xs-offset-0 col-xs-2">
+            	<button  id="<%=getId()%>" data-id="<%=getData().getId()%>" data-event="click" type="button" class="btn btn-default btn-xs">submit</button>
+        	</div>
 		</div>
 	</script>
 	
@@ -124,8 +138,6 @@
         	<button type="button" class="btn btn-default btn-xs">delete</button>
         </div>
 	</script>
-	
-	
 	
 	<!-- submitButtonTemplate -->
 	<script type="text/x-template" id="submitButtonTemplate">

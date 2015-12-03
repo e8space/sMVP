@@ -186,13 +186,14 @@ var SMVP = (function(){
 			        /**
 			         * @hint destroy model
 			         */
-					destroy : function(){
+					destroy : function(callback){
 						try {
 							var self = this;
 							_dataGateway.deleteModel(this.getObjectRepresentation(),function(response){
 								response.status == 200
 								? self = null
 								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
+								typeof callback!= 'undefined' ? callback (self) : false;
 							});
 						} catch (e) {
 			                console.log(e); 
@@ -365,9 +366,10 @@ var SMVP = (function(){
 				 */
 				function View(model){
 					//private members
-			        var _template = $('#'+model.getTemplate()).html();
-			        var _container = model.getContainer();
-			        var _model = model;
+					var _model = $.extend(true,{}, model);
+			        var _template = $('#'+_model.getTemplate()).html();
+			        var _container = _model.getContainer();
+			        
 				      
 			        //getter/setter
 			        this.getTemplate = function (){ return _template; };
@@ -392,8 +394,7 @@ var SMVP = (function(){
 			         * @param callback
 			         */
 			        render	: function(data,callback){
-			        	$("[id^="+this.getContainer()+"]")
-			        	    .html(_.template(this.getTemplate())(data));
+			        	$("[data-container="+this.getContainer()+"]").html(_.template(this.getTemplate())(data));
 			        	try {
 			        		$("#"+this.getContainer()).find('select').select2({placeholder: data.getSelect2Placeholder()});
 			        	} catch(e) {}
@@ -514,23 +515,22 @@ var SMVP = (function(){
 			    	 * @param base
 			    	 * @return this
 			    	 */
-					renderView : function(callback,base){
+					renderView : function(base, callback){
 						var self = this;
-						var basePresenter = base;
+						
 			    		this.getView().render(this.getModel(), function(){
-			    			self.setEventDelegate(basePresenter);
+			    			self.setEventDelegate(base);
 			        		var subTriads = self.getSubTriads();
-			        	
 			        		var subTriadsSize = Object.keys(subTriads).length;
+			        		
 			        		if (subTriadsSize == 0 && typeof callback != 'undefined') {
 			        			callback();
 			        		}
 			        		
 			        		for (var triad in subTriads)(function() {
-			        			
-			        			subTriads[triad].renderView( function(){
+			        			subTriads[triad].renderView(base, function(){
 			        				subTriadsSize --;
-			        			},basePresenter);
+			        			});
 			        			if (subTriadsSize == 0 && typeof callback != 'undefined') {
 				        			callback();
 				        		}
@@ -661,6 +661,8 @@ var SMVP = (function(){
 				 */
 				function DataGatewayMock(ajaxHandler){
 					
+					var referenceId = Object.keys(mockData['user']).length;
+					
 					this.createResponseObject = function(responseCode,data){
 						return  {
 							"status" : responseCode,
@@ -675,8 +677,7 @@ var SMVP = (function(){
 					this.postModel = function(model,callback){
 						try {
 							var resource = model.urlRoot.split('/')[1];
-							var id = resource+(Object.keys(mockData[resource]).length+1);
-							
+							var id = resource+(++referenceId);
 							model.id = id;
 							model.link = model.urlRoot+"/"+id;
 							mockData[resource][id]=model;

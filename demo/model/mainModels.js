@@ -56,11 +56,11 @@ var MainModels = (function(){
 		})
 		
 		SMVP.contentEditViewModel = new SMVP.Model({
-			id:"contentEdit",
-			template:"contentEditTemplate",
-			container:"content",
+			id:"contentEditView",
+			template:"contentEditViewTemplate",
+			container:"editContent",
 			subTriads:[],
-			data : SMVP.userModel
+			data : null
 		})
 		
 		SMVP.editButtonModel = new SMVP.Model({
