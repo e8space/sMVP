@@ -28,7 +28,7 @@ var MainModels = (function(){
 			id:"headerText",
 			template : "headerTextTemplate",
 			container:"headerTextContainer",
-			data : "sMVP demo"
+			data : "sMVP_1.0 demo"
 		});
 		
 		SMVP.contentViewModel = new SMVP.Model({
@@ -84,7 +84,6 @@ var MainModels = (function(){
 			container:"submitButtonContainer",
 			data :"submit"
 		});
-	
-	
+		
 	return MainModels;
 })();

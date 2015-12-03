@@ -31,18 +31,17 @@ var SMVP = (function(){
 				
 					var self =this;
 			        this.properties	= properties || {};
+			        this.cleanProperties = $.extend(true,{},properties);
 
 					//define accessors according to properties
 					this.setGettersSetters = function(data){
 					
-						jQuery.extend(self.properties, data);
+						jQuery.extend(true, self.properties, data);
 						for (var obj in data){ (function(){
 							var cObj = obj;
 							
 							self["set"+obj.ucfirst()] = function(value){
 								self.properties[cObj] = value;
-								$(document).trigger("modelChanged",self);
-								
 								return this;
 							};
 							
@@ -55,7 +54,7 @@ var SMVP = (function(){
 					
 					//update properties and accessors according to json
 					this.updatePropertiesAndAccessors = function(json){
-						jQuery.extend(self.properties, json);
+						jQuery.extend(true,self.properties, json);
 	        			$.each(json, function(key,value){
 							if(typeof self["get"+key.ucfirst()] == 'undefined') {
 								var obj = {};
@@ -77,7 +76,15 @@ var SMVP = (function(){
 					 */
 					clone : function(){
 						return new SMVP.Model(this.getObjectRepresentation());
-					},	
+					},
+					
+					/**
+					 * @hint create new instance without values
+					 * @return {Model}
+					 */
+					cloneClean : function(){
+						return new SMVP.Model(this.cleanProperties);
+					},
 					
 					/**
 					 * @hint get model properties as object
@@ -177,13 +184,14 @@ var SMVP = (function(){
 			        /**
 			         * @hint destroy model
 			         */
-					destroy : function(){
+					destroy : function(callback){
 						try {
 							var self = this;
 							_dataGateway.deleteModel(this.getObjectRepresentation(),function(response){
 								response.status == 200
 								? self = null
 								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
+								typeof callback!= 'undefined' ? callback (self) : false;
 							});
 						} catch (e) {
 			                console.log(e); 
@@ -203,15 +211,13 @@ var SMVP = (function(){
 				 * @constructor
 				 * @param model
 				 */
-				function Collection(model){
+				function Collection(model,name){
 				
 					var _urlRoot = model.getUrlRoot().split('/')[1];
+					var _name = name;
 					var _collection = {};
 					var _models = {};
 					var _keys = Object.keys(model.getObjectRepresentation()).sort();
-					
-					$(document).bind("modelPosted", function(o,data){
-					})
 					
 					/**
 					 * @hint add model
@@ -219,7 +225,6 @@ var SMVP = (function(){
 					 * @returns Boolean
 					 */
 					this.addModel = function(model){
-						
 						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()).sort())) {
 							if (model.getObjectRepresentation().id != "") {
 								_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
@@ -298,7 +303,6 @@ var SMVP = (function(){
 				Collection.prototype.post = function(callback){
 					var self = this;
 					_dataGateway.postCollection(this, function(response){
-						console.log("response:", response);
 						response.status == 200
 							? self.setCollection(response.data)	
 							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
@@ -338,7 +342,7 @@ var SMVP = (function(){
 				 * @hint delete collection
 				 * @return response code
 				 */
-				Collection.prototype.delete = function(callback){
+				Collection.prototype.destroy = function(callback){
 					_dataGateway.deleteCollection(this, function(){
 						typeof callback !='undefined' ? callback(self) : false;
 					});
@@ -358,9 +362,10 @@ var SMVP = (function(){
 				 */
 				function View(model){
 					//private members
-			        var _template = $('#'+model.getTemplate()).html();
-			        var _container = model.getContainer();
-			        var _model = model;
+					var _model = $.extend(true,{}, model);
+			        var _template = $('#'+_model.getTemplate()).html();
+			        var _container = _model.getContainer();
+			        
 				      
 			        //getter/setter
 			        this.getTemplate = function (){ return _template; };
@@ -372,7 +377,7 @@ var SMVP = (function(){
 					this.getModel = function(){
 						return _model;
 					}; 
-					
+				
 					$(_container).empty();
 			    }
 				    
@@ -385,8 +390,7 @@ var SMVP = (function(){
 			         * @param callback
 			         */
 			        render	: function(data,callback){
-			        	$("[id^="+this.getContainer()+"]")
-			        	    .html(_.template(this.getTemplate())(data));
+			        	$("[data-container="+this.getContainer()+"]").html(_.template(this.getTemplate())(data));
 			        	try {
 			        		$("#"+this.getContainer()).find('select').select2({placeholder: data.getSelect2Placeholder()});
 			        	} catch(e) {}
@@ -407,13 +411,18 @@ var SMVP = (function(){
 			        show : function(){
 			        	$("#"+this.getContainer()).show();
 			        },
+			        
+			        refresh : function(data,callback){
+			        	$("[id^="+this.getContainer()+"]").find("input").val("");
+			        	typeof(callback) !='undefined' ? callback() : false;
+			        },
 
 			        /**
 			         * @hint destroy view
 			         */
-			        destroy : function(){
+			        destroy : function(callback){
 			            $("#"+this.getContainer()).off().empty();
-			        	$.publish("viewDestroyed_"+this.getContainer());
+			        	typeof(callback) !='undefined' ? callback() : false;
 			        }
 			    };
 
@@ -438,28 +447,27 @@ var SMVP = (function(){
 			        var _model      = model;
 			        var _subTriads 	= {};
 			        
-			        
 			        if (typeof _view.getModel().getSubTriads ==='function') {
 				        $.each( _view.getModel().getSubTriads(), function(index, value){
-				        	
-				        	//_subTriads[value+'Model']= SMVP.namespace[value+'Model'];
-				        	
 				        	_subTriads[value+'Presenter'] = Object.create(Presenter.prototype,{});
-				        	
 				        	Presenter.call(_subTriads[value+'Presenter'], new SMVP.View(SMVP[value+'Model']),SMVP[value+'Model']);
 				        });
-				     
 			        }
 			        
 			        //getters
-			        this.getView		= function(){ return _view; };
-			        this.getModel		= function(){ return _model; };
-			        this.getSubTriads	= function(){ return _subTriads; };
+			        this.getView = function(){ return _view; };
+			        this.getModel = function(){ return _model; };
+			        this.getSubTriads = function(){ return _subTriads; };
 			        
 			        //application events
 			        $(document).bind("modelChanged_"+self.getModel().getId(), function(o,data){
 			            self.renderView.call();
 			        });
+			        
+			        $(document).bind("collectionChanged_"+self.getModel().getId(), function(o,data){
+			        	self.renderView();
+			        });
+			    	
 			    }
 			        
 			    Presenter.prototype = {
@@ -475,7 +483,7 @@ var SMVP = (function(){
 			    		$('#'+dataId).off(event);
 			    		if (typeof (event) != 'undefined') {
 			    			$('#'+dataId).on(event,function(element){
-			    				base[dataId+"_event"]({element:element,value:$('#'+dataId).val()});
+			    				base[dataId+"_event"]({element:element,value:$('#'+dataId).val(), targetValue:element.target.value});
 			         		});
 			         	};
 			      		return this;
@@ -488,7 +496,7 @@ var SMVP = (function(){
 			        removeEventDelegate : function(){
 			        	var dataId=this.getModel().getId();
 			        	var event = $('[data-id='+dataId+']').attr('data-event');
-			        	$('[data-id='+dataId+']').off(event, self.handler);
+			        	$('#'+dataId).off(event);
 			        },
 
 			    	/**
@@ -497,24 +505,22 @@ var SMVP = (function(){
 			    	 * @param base
 			    	 * @return this
 			    	 */
-					renderView : function(callback,base){
+					renderView : function(base, callback){
 						var self = this;
-						var basePresenter = base || self;
 						
 			    		this.getView().render(this.getModel(), function(){
-			    			self.setEventDelegate(basePresenter);
+			    			self.setEventDelegate(base);
 			        		var subTriads = self.getSubTriads();
-			        	
 			        		var subTriadsSize = Object.keys(subTriads).length;
+			        		
 			        		if (subTriadsSize == 0 && typeof callback != 'undefined') {
 			        			callback();
 			        		}
 			        		
 			        		for (var triad in subTriads)(function() {
-			        			
-			        			subTriads[triad].renderView( function(){
+			        			subTriads[triad].renderView(base, function(){
 			        				subTriadsSize --;
-			        			},basePresenter);
+			        			});
 			        			if (subTriadsSize == 0 && typeof callback != 'undefined') {
 				        			callback();
 				        		}
@@ -540,15 +546,37 @@ var SMVP = (function(){
 			    	/**
 			    	 * @hint deletes view and related subviews and handlers
 			    	 */
-			    	destroyView : function(){
+			    	destroyView : function(callback){
 			    		var self = this;
 			    		var subTriads = self.getSubTriads();
-			    		for (triad in subTriads) {
-			    			self[subTriads[triad]+'_presenter'].destroyView();
-			    		};
+			    		/*for (triad in subTriads) {
+			    			subTriads[triad].destroyView();
+			    		};*/
 			    		self.removeEventDelegate();
 			    		this.getView().destroy();
-			    		$(document).trigger("destroyView_"+this.getModel().getId());
+			    		typeof(callback) !='undefined' ? callback() : false;
+			    	}, 
+			    	
+			    	/**
+			    	 * @hint refreshs view
+			    	 */
+			    	refreshView : function(callback){
+			    		var self = this;	
+			    		this.getView().refresh(this.getModel(), function(){
+			    			var subTriads = self.getSubTriads();
+			    			var subTriadsSize = Object.keys(subTriads).length;
+			        		if (subTriadsSize == 0 && typeof callback != 'undefined') {
+			        			callback();
+			        		}
+			    			for (var triad in subTriads)(function() {
+			    				subTriads[triad].refreshView( function(){
+			        				subTriadsSize --;		
+			        			});
+			        			if (subTriadsSize == 0 && typeof callback != 'undefined') {
+				        			callback();
+				        		}
+			    			})();
+			    		})
 			    	}
 			    };
 			    
@@ -623,6 +651,8 @@ var SMVP = (function(){
 				 */
 				function DataGatewayMock(ajaxHandler){
 					
+					var referenceId = Object.keys(mockData['user']).length;
+					
 					this.createResponseObject = function(responseCode,data){
 						return  {
 							"status" : responseCode,
@@ -637,12 +667,11 @@ var SMVP = (function(){
 					this.postModel = function(model,callback){
 						try {
 							var resource = model.urlRoot.split('/')[1];
-							var id = resource+(Object.keys(mockData[resource]).length+1);
-							
+							var id = resource+(++referenceId);
 							model.id = id;
 							model.link = model.urlRoot+"/"+id;
 							mockData[resource][id]=model;
-						
+								
 							typeof callback != 'undefined' ? callback(this.createResponseObject(201,mockData[resource][id])) : false;
 						} catch(e){
 							console.log(e);

@@ -42,8 +42,6 @@ var SMVP = (function(){
 							
 							self["set"+obj.ucfirst()] = function(value){
 								self.properties[cObj] = value;
-								$(document).trigger("modelChanged",self);
-								
 								return this;
 							};
 							
@@ -236,8 +234,6 @@ var SMVP = (function(){
 								_collection[model.getId()] = model.getObjectRepresentation();
 								_models[model.getId()] = model;
 							}
-							
-							$(document).trigger("collectionChanged_"+_name, this);
 							return true;
 						}	
 						return false;	
@@ -451,23 +447,17 @@ var SMVP = (function(){
 			        var _model      = model;
 			        var _subTriads 	= {};
 			        
-			        
 			        if (typeof _view.getModel().getSubTriads ==='function') {
 				        $.each( _view.getModel().getSubTriads(), function(index, value){
-				        	
-				        	//_subTriads[value+'Model']= SMVP.namespace[value+'Model'];
-				        	
 				        	_subTriads[value+'Presenter'] = Object.create(Presenter.prototype,{});
-				        	
 				        	Presenter.call(_subTriads[value+'Presenter'], new SMVP.View(SMVP[value+'Model']),SMVP[value+'Model']);
 				        });
-				     
 			        }
 			        
 			        //getters
-			        this.getView		= function(){ return _view; };
-			        this.getModel		= function(){ return _model; };
-			        this.getSubTriads	= function(){ return _subTriads; };
+			        this.getView = function(){ return _view; };
+			        this.getModel = function(){ return _model; };
+			        this.getSubTriads = function(){ return _subTriads; };
 			        
 			        //application events
 			        $(document).bind("modelChanged_"+self.getModel().getId(), function(o,data){

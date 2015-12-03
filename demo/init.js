@@ -30,7 +30,6 @@ $(document).ready(function() {
 		switch (splitAction[0]) {
 		
 			case "deleteButtonContainer" : {
-				
 				model.destroy(function(){
 					SMVP.contentPresenter.destroyView(function(){
 						SMVP.contentPresenter.renderView(SMVP.contentPresenter);
