@@ -1,6 +1,6 @@
 /**
- * SMVP 1.2
- * javascript MVP framework
+ * SMVP 1.0
+ * JS MVP framework
  * 2015 mk
  */
 

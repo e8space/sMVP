@@ -1,5 +1,6 @@
 /**
- * 
+ * sMvp Models
+ * (c) 2015 mk
  */
 
 var models = (function(){

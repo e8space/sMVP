@@ -1,6 +1,6 @@
 /**
  * sMvp MockData
- * (c) 2014 kuema
+ * (c) 2015 mk
  */
 
 var mockData = mockData || {};
