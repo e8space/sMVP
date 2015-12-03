@@ -1,5 +1,5 @@
 /**
- * sMvp MockData
+ * sMVP MockData
  * (c) 2015 mk
  */
 

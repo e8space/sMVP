@@ -1,5 +1,5 @@
 /**
- * sMvp Models
+ * sMVP Models
  * (c) 2015 mk
  */
 

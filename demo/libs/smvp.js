@@ -1,5 +1,5 @@
 /**
- * SMVP 1.0
+ * sMVP 1.0
  * JS MVP framework
  * 2015 mk
  */
@@ -7,9 +7,6 @@
 var SMVP = (function(){
 	
 	var _dataGateway = null;
-	String.prototype.ucfirst = function(){
-		return this.charAt(0).toUpperCase() + this.substr(1);
-	};	
 	
 	var API = {
 			
@@ -360,12 +357,12 @@ var SMVP = (function(){
 				 * @param model
 				 */
 				function View(model){
+					
 					//private members
 					var _model = $.extend(true,{}, model);
 			        var _template = $('#'+_model.getTemplate()).html();
 			        var _container = _model.getContainer();
 			        
-				      
 			        //getter/setter
 			        this.getTemplate = function (){ return _template; };
 			        this.setTemplate = function (template){ _template = template; return this;};
@@ -546,12 +543,7 @@ var SMVP = (function(){
 			    	 * @hint deletes view and related subviews and handlers
 			    	 */
 			    	destroyView : function(callback){
-			    		var self = this;
-			    		var subTriads = self.getSubTriads();
-			    		/*for (triad in subTriads) {
-			    			subTriads[triad].destroyView();
-			    		};*/
-			    		self.removeEventDelegate();
+			    		this.removeEventDelegate();
 			    		this.getView().destroy();
 			    		typeof(callback) !='undefined' ? callback() : false;
 			    	}, 
@@ -800,7 +792,11 @@ var SMVP = (function(){
 			 */
 			Helper : (function(){
 				
-				function Helper(){};
+				function Helper(){
+					String.prototype.ucfirst = function(){
+						return this.charAt(0).toUpperCase() + this.substr(1);
+					};	
+				};
 				
 				Helper.prototype.uuid = function() {
 					var d = new Date().getTime();
