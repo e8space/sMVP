@@ -46,7 +46,6 @@ $(document).ready(function() {
 		}	
 	}
 	
-	
 	//contentEditView_event
 	SMVP.contentEditPresenter.contentEditView_event = function(e){
 		$.each(SMVP.contentEditPresenter.getModel().getData().getMutable(), function(key, value){
