@@ -2,7 +2,7 @@
  * 
  */
 
-var MainModels = (function(){
+var models = (function(){
 	
 		SMVP.userModel = new SMVP.Model({
 			id : "",
@@ -58,7 +58,7 @@ var MainModels = (function(){
 		SMVP.contentEditViewModel = new SMVP.Model({
 			id:"contentEditView",
 			template:"contentEditViewTemplate",
-			container:"editContent",
+			container:"editContentContainer",
 			subTriads:[],
 			data : null
 		})
@@ -77,7 +77,6 @@ var MainModels = (function(){
 			data:"delete"
 		});
 		
-		
 		SMVP.submitButtonModel = new SMVP.Model({
 			id:"submitButton",
 			template :"submitButtonTemplate",
@@ -85,5 +84,5 @@ var MainModels = (function(){
 			data :"submit"
 		});
 		
-	return MainModels;
+	return models;
 })();

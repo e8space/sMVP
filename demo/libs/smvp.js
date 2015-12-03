@@ -11,7 +11,6 @@ var SMVP = (function(){
 		return this.charAt(0).toUpperCase() + this.substr(1);
 	};	
 	
-	
 	var API = {
 			
 			setDataGateway : function(dataGateway){
@@ -796,8 +795,6 @@ var SMVP = (function(){
 				return DataGatewayMock;
 			})(),
 
-			
-			
 			/**
 			 * Helper
 			 */
