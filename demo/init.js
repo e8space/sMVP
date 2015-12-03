@@ -62,7 +62,6 @@ $(document).ready(function() {
 	
 	//submitButton_event
 	SMVP.contentPresenter.submitButton_event = function(e){
-	
 		this.getSubTriads().contentFormPresenter.getModel().getData().post(function(response){
 			var model = SMVP.contentPresenter.getSubTriads().contentFormPresenter.getModel();
 			model.setData(response);
