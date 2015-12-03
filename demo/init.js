@@ -1,5 +1,5 @@
 /**
- * SMVP1.0 demo
+ * sMVP_1.0 demo
  * 2015 mk
  */
  

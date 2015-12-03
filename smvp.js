@@ -14,9 +14,9 @@ var SMVP = (function(){
 				_dataGateway = dataGateway;
 			},
 			
-			/**
-			 * Model
-			 */
+/**
+ * Model
+ */
 			Model : (function(){
 				
 				/**
@@ -198,9 +198,9 @@ var SMVP = (function(){
 				return Model;
 			})(),
 			
-			/**
-			 * Collection
-			 */
+/**
+ * Collection
+ */
 			Collection : (function(){
 				
 				/**
@@ -347,9 +347,9 @@ var SMVP = (function(){
 				return Collection;
 			})(),
 			
-			/**
-			 * View
-			 */
+/**
+ * View
+ */
 			View : (function(){
 				   
 				/**
@@ -425,9 +425,9 @@ var SMVP = (function(){
 			    return View;
 			})(),
 
-			/**
-			 * Presenter
-			 */
+/**
+ * Presenter
+ */
 			Presenter : (function(){
 				
 				/**
@@ -574,9 +574,9 @@ var SMVP = (function(){
 			    return Presenter;
 			})(),
 			
-			/**
-			 * DataGateway
-			 */
+/**
+ * DataGateway
+ */
 			DataGateway : (function(){
 				
 				/**
@@ -631,9 +631,9 @@ var SMVP = (function(){
 				return DataGateway;
 			})(),
 			
-			/**
-			 * DataGatewayMock
-			 */
+/**
+ * DataGatewayMock
+ */
 			DataGatewayMock : (function(){
 				
 				/**
@@ -787,9 +787,9 @@ var SMVP = (function(){
 				return DataGatewayMock;
 			})(),
 
-			/**
-			 * Helper
-			 */
+/**
+ * Helper
+ */
 			Helper : (function(){
 				
 				function Helper(){
@@ -811,9 +811,9 @@ var SMVP = (function(){
 				return Helper;
 			})(),
 
-			/**
-			 * AjaxHandler
-			 */
+/**
+ * AjaxHandler
+ */
 			AjaxHandler : (function(){
 				
 				/**
