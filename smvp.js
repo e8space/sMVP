@@ -7,13 +7,15 @@
 var SMVP = (function(){
 	
 	var _dataGateway = null;
+	var _nameSpace = null;
 	
 	var API = {
-			
 			setDataGateway : function(dataGateway){
 				_dataGateway = dataGateway;
 			},
-			
+			setNameSpace : function(nameSpace){
+				_nameSpace = nameSpace;
+			},
 /**
  * Model
  */
@@ -24,7 +26,6 @@ var SMVP = (function(){
 				 * @param properties
 				 */
 				function Model (properties){
-				
 					var self =this;
 			        this.properties	= properties || {};
 			        this.cleanProperties = $.extend(true,{},properties);
@@ -357,7 +358,6 @@ var SMVP = (function(){
 				 * @param model
 				 */
 				function View(model){
-					
 					//private members
 					var _model = $.extend(true,{}, model);
 			        var _template = $('#'+_model.getTemplate()).html();
@@ -436,17 +436,17 @@ var SMVP = (function(){
 				 * @param model
 				 */
 			    function Presenter(view, model){
-			   
+			    	
 			    	//private members
 			    	var self    	= this;
 			        var _view   	= view;
-			        var _model      = model;
+			        var _model      = model || view.getModel();
 			        var _subTriads 	= {};
 			        
 			        if (typeof _view.getModel().getSubTriads ==='function') {
 				        $.each( _view.getModel().getSubTriads(), function(index, value){
 				        	_subTriads[value+'Presenter'] = Object.create(Presenter.prototype,{});
-				        	Presenter.call(_subTriads[value+'Presenter'], new SMVP.View(SMVP[value+'Model']),SMVP[value+'Model']);
+				        	Presenter.call(_subTriads[value+'Presenter'], new SMVP.View(_nameSpace[value+'Model']),_nameSpace[value+'Model']);
 				        });
 			        }
 			        
@@ -461,7 +461,7 @@ var SMVP = (function(){
 			        });
 			        
 			        $(document).bind("collectionChanged_"+self.getModel().getId(), function(o,data){
-			        	self.renderView();
+			        	self.renderView().call();
 			        });
 			    	
 			    }
@@ -479,7 +479,7 @@ var SMVP = (function(){
 			    		$('#'+dataId).off(event);
 			    		if (typeof (event) != 'undefined') {
 			    			$('#'+dataId).on(event,function(element){
-			    				base[dataId+"_event"]({element:element,value:$('#'+dataId).val(), targetValue:element.target.value});
+			    				base[dataId+"Event"]({element:element,value:$('#'+dataId).val(), targetValue:element.target.value});
 			         		});
 			         	};
 			      		return this;
@@ -490,8 +490,9 @@ var SMVP = (function(){
 			    	 * @return this
 			    	 */
 			        removeEventDelegate : function(){
+			        
 			        	var dataId=this.getModel().getId();
-			        	var event = $('[data-id='+dataId+']').attr('data-event');
+			        	var event = $('#'+dataId).attr('data-event');
 			        	$('#'+dataId).off(event);
 			        },
 
@@ -503,7 +504,7 @@ var SMVP = (function(){
 			    	 */
 					renderView : function(base, callback){
 						var self = this;
-						
+						var base = base || this;
 			    		this.getView().render(this.getModel(), function(){
 			    			self.setEventDelegate(base);
 			        		var subTriads = self.getSubTriads();
@@ -792,6 +793,9 @@ var SMVP = (function(){
  */
 			Helper : (function(){
 				
+				/**
+				 * @constructor
+				 */
 				function Helper(){
 					String.prototype.ucfirst = function(){
 						return this.charAt(0).toUpperCase() + this.substr(1);

@@ -4,8 +4,10 @@
  */
 
 var models = (function(){
+		
+		demo = {};
 	
-		SMVP.userModel = new SMVP.Model({
+		demo.userModel = new SMVP.Model({
 			id : "",
 			urlRoot : "/user",
 			link : "",
@@ -15,9 +17,9 @@ var models = (function(){
 			}
 		});
 		
-		SMVP.userCollection = new SMVP.Collection(SMVP.userModel,"contentStock");
+		demo.userCollection = new SMVP.Collection(demo.userModel,"contentStock");
 		
-		SMVP.headerViewModel = new SMVP.Model({
+		demo.headerViewModel = new SMVP.Model({
 			id:"headerView",
 			template:"headerViewTemplate",
 			container:"header",
@@ -25,38 +27,38 @@ var models = (function(){
 			subTriads : ['headerText']
 		});
 		
-		SMVP.headerTextModel = new SMVP.Model({
+		demo.headerTextModel = new SMVP.Model({
 			id:"headerText",
 			template : "headerTextTemplate",
 			container:"headerTextContainer",
-			data : "sMVP_1.0 demo"
+			data : ""
 		});
 		
-		SMVP.contentViewModel = new SMVP.Model({
+		demo.contentViewModel = new SMVP.Model({
 			id:"contentView",
 			template : "contentViewTemplate",
 			container : "content",
 			data : null,
-			subTriads : ['contentForm','submitButton','contentStock']
+			subTriads : ['contentStock','contentForm']
 		});
 		
-		SMVP.contentFormModel = new SMVP.Model({
-			id : "contentForm",
-			template : "contentFormTemplate",
-			container : "contentFormContainer",
-			subTriads : [],
-			data : SMVP.userModel
-		});
-		
-		SMVP.contentStockModel = new SMVP.Model({
+		demo.contentStockModel = new SMVP.Model({
 			id:"contentStock",
 			template:"contentStockTemplate",
 			container:"contentStockContainer",
-			data:SMVP.userCollection,
+			data:demo.userCollection,
 			subTriads : ['editButton','deleteButton']
-		})
+		});
 		
-		SMVP.contentEditViewModel = new SMVP.Model({
+		demo.contentFormModel = new SMVP.Model({
+			id : "contentForm",
+			template : "contentFormTemplate",
+			container : "contentFormContainer",
+			subTriads : ['submitButton'],
+			data : demo.userModel
+		});
+		
+		demo.contentEditViewModel = new SMVP.Model({
 			id:"contentEditView",
 			template:"contentEditViewTemplate",
 			container:"editContentContainer",
@@ -64,21 +66,21 @@ var models = (function(){
 			data : null
 		})
 		
-		SMVP.editButtonModel = new SMVP.Model({
+		demo.editButtonModel = new SMVP.Model({
 			id:"editButton",
 			template:"editButtonTemplate",
 			container:"editButtonContainer",
 			data:"edit"
 		});
 		
-		SMVP.deleteButtonModel = new SMVP.Model({
+		demo.deleteButtonModel = new SMVP.Model({
 			id:"deleteButton",
 			template:"deleteButtonTemplate",
 			container:"deleteButtonContainer",
 			data:"delete"
 		});
 		
-		SMVP.submitButtonModel = new SMVP.Model({
+		demo.submitButtonModel = new SMVP.Model({
 			id:"submitButton",
 			template :"submitButtonTemplate",
 			container:"submitButtonContainer",
