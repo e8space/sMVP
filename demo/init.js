@@ -15,7 +15,7 @@ $(document).ready(function() {
 	demo.contentEditPresenter = new SMVP.Presenter(new SMVP.View(demo.contentEditViewModel));
 	
 	//contentForm_event
-	demo.contentPresenter.contentForm_event= function(e){
+	demo.contentPresenter.contentFormEvent= function(e){
 		this.getSubTriads().contentFormPresenter.getModel().getData().getMutable()[e.element.target.id]=e.targetValue;
 	};
 	
@@ -45,6 +45,7 @@ $(document).ready(function() {
 	
 	//contentEditView_event
 	demo.contentEditPresenter.contentEditViewEvent = function(e){
+		console.log("e:", e);
 		$.each(demo.contentEditPresenter.getModel().getData().getMutable(), function(key, value){
 			demo.contentEditPresenter.getModel().getData().getMutable()[key]=$('#'+key).val();
 		});

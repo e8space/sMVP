@@ -292,6 +292,14 @@ var SMVP = (function(){
 					this.getUrlRoot = function(){
 						return _urlRoot;
 					};
+					
+					/**
+					 * @hint get _name
+					 * @return name
+					 */
+					this.getName = function(){
+						return _name;
+					}
 				}
 				
 				/**
@@ -479,6 +487,7 @@ var SMVP = (function(){
 			    		$('#'+dataId).off(event);
 			    		if (typeof (event) != 'undefined') {
 			    			$('#'+dataId).on(event,function(element){
+			    				console.log("dataId: ", dataId);
 			    				base[dataId+"Event"]({element:element,value:$('#'+dataId).val(), targetValue:element.target.value});
 			         		});
 			         	};

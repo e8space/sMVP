@@ -11,13 +11,16 @@ var models = (function(){
 			id : "",
 			urlRoot : "/user",
 			link : "",
+			immutable : {
+				memberNumber : ""
+			},
 			mutable : {
 				name : "",
 				gender :""
 			}
 		});
 		
-		demo.userCollection = new SMVP.Collection(demo.userModel,"contentStock");
+		demo.userCollection = new SMVP.Collection(demo.userModel,"users");
 		
 		demo.headerViewModel = new SMVP.Model({
 			id:"headerView",
