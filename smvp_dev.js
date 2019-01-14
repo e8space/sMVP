@@ -1,7 +1,8 @@
 /**
- * sMVP 1.2
+ * sMVP 1.1
  * JS MVP framework
- * 2015 marcokueng
+ * lightweight Model View Presenter framework
+ * © 2018 marcokueng
  */
 
 var SMVP = (function(){
@@ -10,7 +11,6 @@ var SMVP = (function(){
 	var _namespace = null;
 	
 	var API = {
-			
 			setDataGateway : function(dataGateway){
 				_dataGateway = dataGateway;
 			},
@@ -1037,7 +1037,6 @@ var SMVP = (function(){
 					
 					$.ajax({
 						type 		: "DELETE",
-					
 						url 		: url,
 						beforeSend: function(xhr){xhr.setRequestHeader('token', cookieValue);},
 						success 	: function(data, status,request) {
@@ -1050,8 +1049,6 @@ var SMVP = (function(){
 						complete : function(data) {	
 						}
 					});
-					
-					
 				};
 				
 				return AjaxHandler;
