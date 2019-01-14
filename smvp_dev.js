@@ -1,21 +1,23 @@
 /**
- * sMVP 1.0
+ * sMVP 1.2
  * JS MVP framework
- * 2015 mk
+ * 2015 marcokueng
  */
 
 var SMVP = (function(){
 	
 	var _dataGateway = null;
-	var _nameSpace = null;
+	var _namespace = null;
 	
 	var API = {
+			
 			setDataGateway : function(dataGateway){
 				_dataGateway = dataGateway;
 			},
-			setNameSpace : function(nameSpace){
-				_nameSpace = nameSpace;
+			setNameSpace : function(namespace){
+				_namespace = namespace;
 			},
+			
 /**
  * Model
  */
@@ -25,7 +27,8 @@ var SMVP = (function(){
 				 * @constructor
 				 * @param properties
 				 */
-				function Model (properties){
+				function Model(properties){
+				
 					var self =this;
 			        this.properties	= properties || {};
 			        this.cleanProperties = $.extend(true,{},properties);
@@ -68,7 +71,7 @@ var SMVP = (function(){
 				Model.prototype = {
 						
 					/**
-					 * @hint create new instance by cloning
+					 * @hint clone instance
 					 * @returns {Model}
 					 */
 					clone : function(){
@@ -84,7 +87,7 @@ var SMVP = (function(){
 					},
 					
 					/**
-					 * @hint get model properties as object
+					 * @hint get model properties as plain object
 					 * @returns {Object}
 					 */
 					getObjectRepresentation : function(){
@@ -96,7 +99,7 @@ var SMVP = (function(){
 					},
 					
 					/**
-					 * @hint set model properties from object
+					 * @hint set model properties from plain object
 					 * @param objRepresentation
 					 */
 					setObjectRepresentation : function(objRepresentation){
@@ -129,17 +132,24 @@ var SMVP = (function(){
 			         * @returns {Model}
 			         */
 			        post: function(callback){
-						try {
+						//try {
 							var self = this;
-							_dataGateway.postModel(this.getObjectRepresentation(), function(response){
-								response.status == 201 
-									? self.updatePropertiesAndAccessors(response.data) 
-									: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
-								typeof callback!= 'undefined' ? callback (self) : false;
+							_dataGateway.postModel(this, function(data,status,request){
+								if (status == 'success') {
+									self.updatePropertiesAndAccessors(data.fields);
+									if (typeof _namespace[self.getRoot()+"Collection"] != 'undefined') { 
+										_namespace[self.getRoot()+"Collection"].addModel(self);
+									}
+									typeof callback!= 'undefined' ? callback (self,status) : false;
+								} else {
+									typeof callback!= 'undefined' ? callback (false,status) : false;
+								}
+								$(document).trigger("dataGatewayInfo", {statusCode:status, status:status , text:self.getRoot()+" model posted "+status});
+								
 							});
-						} catch (e){
-			                console.log(e);
-						}
+						//} catch (e){
+			              //  console.log(e);
+						//}
 					},
 
 			        /**
@@ -147,17 +157,23 @@ var SMVP = (function(){
 			         * @returns {Model}
 			         */
 			        fetch : function(callback){
-			        	try {
+			        	//try {
 			        		var self = this;
-			        		_dataGateway.fetchModel(this.getObjectRepresentation(), function(response){
-			        			response.status == 200
-			        				? self.updatePropertiesAndAccessors(response.data)
-			        				:  $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
-				        		typeof callback!= 'undefined' ? callback (self) : false;
+			        		_dataGateway.fetchModel(this, function(data,status,request){
+			        			if (status == 'success') {
+			        				if (typeof data.fields != 'undefined') {
+			        					self.updatePropertiesAndAccessors(data.fields);
+			        				}
+			        				
+			        			} else {
+			        		
+			        				$(document).trigger("dataGatewayInfo", {statusCode:status, status:status , text:self.getRoot()+" model update "+status});
+			        			}
+			        			typeof callback!= 'undefined' ? callback (self,status) : false;
 			        		});
-			        	} catch (e){
-			        		console.log(e);
-			        	}
+			        	//} catch (e){
+			        		//console.log(e);
+			        	//}
 					},
 
 			        /**
@@ -165,34 +181,38 @@ var SMVP = (function(){
 			         * @returns {Model}
 			         */
 					update : function(callback){
-			            try {
+			            //try {
 			            	var self = this;
-			            	_dataGateway.updateModel(this.getObjectRepresentation(),function(response){
-			            		response.status == 200
-			            			? true
-			            			: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
-			            		typeof callback!= 'undefined' ? callback (self) : false;
+			            	_dataGateway.updateModel(this,function(data,status,response){
+			            		//console.log("responseData: ", data);
+			            		if (status == 'success' && typeof _namespace[self.getRoot()+"Collection"] != 'undefined'){
+			            			_namespace[self.getRoot()+"Collection"].updateModel(self);
+			            		} 
+			            		
+								$(document).trigger("dataGatewayInfo", {statusCode:status, status:status , text:self.getRoot()+" model update "+status});
+			            		typeof callback!= 'undefined' ? callback (self,data) : false;
 			            	});
-			            } catch (e){
-			                console.log(e);
-			            }
+			            //} catch (e){
+			                //console.log(e);
+			            //}
 					},
 
 			        /**
 			         * @hint destroy model
 			         */
 					destroy : function(callback){
-						try {
+						//try {
 							var self = this;
-							_dataGateway.deleteModel(this.getObjectRepresentation(),function(response){
-								response.status == 200
-								? self = null
-								: $(document).trigger("dataGatewayError", {statusCode:response.status, message:response.data});
+							_dataGateway.deleteModel(this,function(data,status,request){
+								if (status == 'success' && typeof _namespace[self.getRoot()+"Collection"] != 'undefined' ) {
+									_namespace[self.getRoot()+"Collection"].removeModel(self.getId());
+								} 
+								$(document).trigger("dataGatewayInfo", {statusCode:status, status:status , text:self.getRoot()+" model delete "+status});
 								typeof callback!= 'undefined' ? callback (self) : false;
 							});
-						} catch (e) {
-			                console.log(e); 
-						}
+						//} catch (e) {
+			             //   console.log(e); 
+						//}
 					}
 				};
 				
@@ -208,21 +228,28 @@ var SMVP = (function(){
 				 * @constructor
 				 * @param model
 				 */
-				function Collection(model,name){
+				function Collection(root){
 				
-					var _urlRoot = model.getUrlRoot().split('/')[1];
-					var _name = name;
+					var _root = root
 					var _collection = {};
+					var _sortedCollection = [];
 					var _models = {};
-					var _keys = Object.keys(model.getObjectRepresentation()).sort();
+					var _keys = {};
+					
+					this.collection = _collection;
+					this.sortedCollection = _sortedCollection;
+					
+					this.setKeys=function(modelRepresentation){
+						_keys = Object.keys(modelRepresentation).sort();
+					}
 					
 					/**
-					 * @hint add model
+					 * @hint add model to collection
 					 * @param model
 					 * @returns Boolean
 					 */
 					this.addModel = function(model){
-						if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()).sort())) {
+						//if (JSON.stringify(_keys) == JSON.stringify(Object.keys(model.getObjectRepresentation()).sort())) {
 							if (model.getObjectRepresentation().id != "") {
 								_collection[model.getObjectRepresentation().id] = model.getObjectRepresentation();
 								_models[model.getObjectRepresentation().id] = model;
@@ -230,12 +257,23 @@ var SMVP = (function(){
 								model.setId(_helper.uuid());
 								_collection[model.getId()] = model.getObjectRepresentation();
 								_models[model.getId()] = model;
-							}
-							return true;
-						}	
+							};
+							$(document).trigger("collectionChanged_"+root, {});
+							return this;
+						//}
 						return false;	
 					};
-							
+					
+					/**
+					 * @hint remove model from collection
+					 * @param model
+					 */
+					this.removeModel = function(id){
+						delete _collection[id];
+						delete _models[id];
+						$(document).trigger("collectionChanged_"+root, {});
+					}
+					
 					/**
 					 * @hint read model
 					 * @param id
@@ -247,6 +285,16 @@ var SMVP = (function(){
 						}
 						return _models[id];
 					};
+					
+					/**
+					 * @hint update model
+					 * @param model
+					 */
+					this.updateModel = function(model){
+						_models[model.getId()] = model;
+						_collection[model.getId()] = model.getObjectRepresentation();
+						$(document).trigger("collectionChanged_"+root, {});
+					}
 					
 					/**
 					 * @hint get models
@@ -278,28 +326,40 @@ var SMVP = (function(){
 					};
 					
 					/**
+					 * @hint read sorted collection
+					 * @returns sorted collection
+					 */
+					this.getSortedCollection = function(){
+						return _sortedCollection;
+					}
+					
+					/**
 					 * @hint set collection 
 					 * @param collection
 					 */
 					this.setCollection = function(collection){
+						this.collection = collection;
 						_collection = collection;
+					};
+					
+					/**
+					 * @hint set collection 
+					 * @param collection
+					 */
+					this.setSortedCollection = function(sortedCollection){
+						this.sortedCollection = sortedCollection;
+						_sortedCollection = sortedCollection;
 					};
 					
 					/**
 					 * @hint get Url root
 					 * @return urlRoot
 					 */
-					this.getUrlRoot = function(){
-						return _urlRoot;
+					this.getRoot = function(){
+						return _root;
 					};
 					
-					/**
-					 * @hint get _name
-					 * @return name
-					 */
-					this.getName = function(){
-						return _name;
-					}
+					return this;
 				}
 				
 				/**
@@ -308,11 +368,11 @@ var SMVP = (function(){
 				Collection.prototype.post = function(callback){
 					var self = this;
 					_dataGateway.postCollection(this, function(response){
-						response.status == 200
-							? self.setCollection(response.data)	
-							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"post collection failed"});
-						typeof callback !='undefined' ? callback(self) : false;
+						if (typeof callback != 'undefined') {
+							callback(self,response);
+						}
 					});
+					return this;
 				};
 				
 				/**
@@ -320,15 +380,45 @@ var SMVP = (function(){
 				 * @returns collection
 				 */
 				Collection.prototype.fetch = function(callback){
+					
 					var self = this;
 					_dataGateway.fetchCollection(this, function(response){
-						response.status == 200
-							? self.setCollection(response.data)
-							: $(document).trigger("dataGatewayError", {statusCode:response.status, message:"fetch collection failed"});
+						if (response.status == 'success') {
+							var collection = {};
+							try {
+								$.each(response.data.fields[self.getRoot()+'s'], function(){
+									collection[this.id] = this;
+								})
+							} catch(e){};
+							self.setCollection(collection);
+						}
+						$(document).trigger("dataGatewayInfo", {statusCode:response.status, status:response.status , text:self.getRoot()+" collection fetch "+response.status});
 						typeof callback != 'undefined' ? callback(self) : false;
 					});
 				};
 					
+				/**
+				 * @hint fetch collection
+				 * @returns collection
+				 */
+				Collection.prototype.fetchSorted = function(callback){
+					var self = this;
+					_dataGateway.fetchCollection(this, function(response){
+						if (response.status == 'success') {
+							var collection = [];
+							try {
+								$.each(response.data.fields[self.getRoot()+"s"], function(){
+									collection.push(this);
+								})
+							} catch(e){};
+							self.setSortedCollection(collection);
+						}
+						$(document).trigger("dataGatewayInfo", {statusCode:response.status, status:response.status , text:self.getRoot()+" collection fetch "+response.status});
+						typeof callback != 'undefined' ? callback(self) : false;
+					});
+				};
+				
+				
 				/**
 				 * @hint update collection
 				 * @returns collection
@@ -365,23 +455,17 @@ var SMVP = (function(){
 				 * @constructor
 				 * @param model
 				 */
-				function View(model){
-					//private members
-					var _model = $.extend(true,{}, model);
-			        var _template = $('#'+_model.getTemplate()).html();
-			        var _container = _model.getContainer();
-			        
-			        //getter/setter
+				function View(){
+					
+			        var _template = null;
+			        var _container = null; 
+			   
 			        this.getTemplate = function (){ return _template; };
 			        this.setTemplate = function (template){ _template = template; return this;};
 			        
 			        this.getContainer = function(){ return _container; };
 					this.setContainer = function(container){_container = container; return this;};
 			        
-					this.getModel = function(){
-						return _model;
-					}; 
-				
 					$(_container).empty();
 			    }
 				    
@@ -394,11 +478,8 @@ var SMVP = (function(){
 			         * @param callback
 			         */
 			        render	: function(data,callback){
-			        	$("[data-container="+this.getContainer()+"]").html(_.template(this.getTemplate())(data));
-			        	try {
-			        		$("#"+this.getContainer()).find('select').select2({placeholder: data.getSelect2Placeholder()});
-			        	} catch(e) {}
-
+			        	$('#'+this.getContainer()).html(_.template(this.getTemplate())(data));
+			        	//$("[data-container="+this.getContainer()+"]").html(_.template(this.getTemplate())(data));
 						typeof(callback) !='undefined' ? callback() : false;
 			        },
 			        
@@ -416,6 +497,9 @@ var SMVP = (function(){
 			        	$("#"+this.getContainer()).show();
 			        },
 			        
+			        /**
+			         * @hint refresh view
+			         */
 			        refresh : function(data,callback){
 			        	$("[id^="+this.getContainer()+"]").find("input").val("");
 			        	typeof(callback) !='undefined' ? callback() : false;
@@ -427,7 +511,17 @@ var SMVP = (function(){
 			        destroy : function(callback){
 			            $("#"+this.getContainer()).off().empty();
 			        	typeof(callback) !='undefined' ? callback() : false;
-			        }
+			        },
+			        
+			        /**
+			         * @hint animate view
+			         */
+			        animate : function(event, container, offset){
+			            $(container).animate({
+			                scrollTop: $(event.element.target).offset().top - container.offset().top + container.scrollTop()-offset
+			            });
+			        },
+
 			    };
 
 			    return View;
@@ -443,35 +537,34 @@ var SMVP = (function(){
 				 * @param view
 				 * @param model
 				 */
-			    function Presenter(view, model){
+			    function Presenter(model, view){
 			    	
 			    	//private members
 			    	var self    	= this;
-			        var _view   	= view;
-			        var _model      = model || view.getModel();
+			        var _view   	= view || new SMVP.View();
+			        var _model      = model || new SMVP.Model({id:_util.uuid()});
 			        var _subTriads 	= {};
 			        
-			        if (typeof _view.getModel().getSubTriads ==='function') {
-				        $.each( _view.getModel().getSubTriads(), function(index, value){
+			        typeof _model.getTemplate === 'function' ? _view.setTemplate(_model.getTemplate()) : false;
+			        typeof _model.getContainer === 'function' ? _view.setContainer(_model.getContainer()) :false;
+			        
+			        if (typeof _model.getSubTriads ==='function') {
+				        $.each( _model.getSubTriads(), function(index, value){
 				        	_subTriads[value+'Presenter'] = Object.create(Presenter.prototype,{});
-				        	Presenter.call(_subTriads[value+'Presenter'], new SMVP.View(_nameSpace[value+'Model']),_nameSpace[value+'Model']);
+				        	Presenter.call(_subTriads[value+'Presenter'], _namespace[value+'Model']);
 				        });
 			        }
 			        
 			        //getters
 			        this.getView = function(){ return _view; };
 			        this.getModel = function(){ return _model; };
+			        this.setModel = function(model) {_model = model};
 			        this.getSubTriads = function(){ return _subTriads; };
 			        
 			        //application events
 			        $(document).bind("modelChanged_"+self.getModel().getId(), function(o,data){
-			            self.renderView.call();
-			        });
-			        
-			        $(document).bind("collectionChanged_"+self.getModel().getId(), function(o,data){
-			        	self.renderView().call();
-			        });
-			    	
+			        	self.renderView.call();
+			        });    	
 			    }
 			        
 			    Presenter.prototype = {
@@ -483,14 +576,25 @@ var SMVP = (function(){
 			    	*/
 			    	setEventDelegate : function(base){
 			    		var dataId=this.getModel().getId();
-			    		var event = $('#'+dataId).attr('data-event');
-			    		$('#'+dataId).off(event);
-			    		if (typeof (event) != 'undefined') {
-			    			$('#'+dataId).on(event,function(element){
-			    				console.log("dataId: ", dataId);
-			    				base[dataId+"Event"]({element:element,value:$('#'+dataId).val(), targetValue:element.target.value});
-			         		});
-			         	};
+			    		var that = this;
+			    		var dataEvents = $("[data-event]");
+			    	
+			    		$.each(dataEvents, function(){
+			    			var event = $(this).attr('data-event');
+			    			$('#'+this.id).off(event);
+			    			$('#'+this.id).on(event, function(element){
+			    				var elementValue = element.target.value;
+			    				//try {
+			    					if (event=='change') {
+			    						try {
+			    							that.getModel().getData()["set"+element.target.id.ucfirst()](elementValue);
+			    						} catch(e){console.log(e)}
+			    					}
+			    					base[dataId+"Event"]({element:element,value:$('[data-id='+dataId+']').val(),eventType:event, id:this.id, targetId: element.target.id, targetValue:element.target.value});
+			    				//} catch(e) {};
+			    			})
+			    			
+			    		})
 			      		return this;
 			    	},
 			    		
@@ -499,22 +603,23 @@ var SMVP = (function(){
 			    	 * @return this
 			    	 */
 			        removeEventDelegate : function(){
-			        
 			        	var dataId=this.getModel().getId();
-			        	var event = $('#'+dataId).attr('data-event');
+			        	var event = $('[data-id='+dataId+']').attr('data-event');
 			        	$('#'+dataId).off(event);
 			        },
 
 			    	/**
-			    	 * @hint renders view and subviews
+			    	 * @hint render view and sub-view(s)
 			    	 * @param callback
 			    	 * @param base
 			    	 * @return this
 			    	 */
-					renderView : function(base, callback){
-						var self = this;
+					renderView : function(callback, base){
+						var self = this;		
 						var base = base || this;
-			    		this.getView().render(this.getModel(), function(){
+						
+			    		this.getView().render(self.getModel(), function(){
+			    			
 			    			self.setEventDelegate(base);
 			        		var subTriads = self.getSubTriads();
 			        		var subTriadsSize = Object.keys(subTriads).length;
@@ -536,14 +641,14 @@ var SMVP = (function(){
 			    	},
 
 			        /**
-			         *  @hint hides view without removing elements and handlers
+			         *  @hint hide view without removing elements and handlers
 			         */
 			    	hideView : function(){
 			    		this.getView().hide();
 			    	},
 			    	
 			    	/**
-			    	 * @hint shows view
+			    	 * @hint show view
 			    	 */
 			    	showView : function(){
 			    		this.getView().show();
@@ -559,7 +664,7 @@ var SMVP = (function(){
 			    	}, 
 			    	
 			    	/**
-			    	 * @hint refreshs view
+			    	 * @hint refresh view
 			    	 */
 			    	refreshView : function(callback){
 			    		var self = this;	
@@ -578,7 +683,15 @@ var SMVP = (function(){
 				        		}
 			    			})();
 			    		})
-			    	}
+			    	},
+			    	
+			    	/**
+			    	 * @hint animate view
+			    	 */
+			        animateView : function(event, container, offset){
+			            this.getView().animate(event, container, offset);
+			        }
+
 			    };
 			    
 			    return Presenter;
@@ -594,40 +707,68 @@ var SMVP = (function(){
 				 * @param ajaxHandler
 				 */
 				function DataGateway(ajaxHandler){
+					var self = this;
 					
-					this.postModel = function(model){
-						ajaxHandler.post(model.link,model,function(response){
-							return response;
+					var baseUrl = 'earthsounds/api/';
+					
+					this.createResponseObject = function(responseCode,data){
+						return  {
+							"status" : responseCode,
+							"data" : data
+						};
+					};
+					
+					this.postModel = function(model,callback){
+						ajaxHandler.post(baseUrl+model.getRoot(),model.getObjectRepresentation(),function(data,status,request){
+							typeof callback != 'undefined' ? callback(data, status, request) : false;
+							
 						});
 					};
 					
-					this.fetchModel = function(model){
-						ajaxHandler.get(model.link, function(response){
-							return response;
+					this.fetchModel = function(model,callback){
+						var delimiter = "";
+						if (typeof model.getEndpoint === 'function' && model.getEndpoint() != "") {
+							if (model.getId() != "") delimiter = "/"; 
+							ajaxHandler.get(baseUrl+model.getRoot()+delimiter+model.getId()+model.getEndpoint(),null, function(data, status, request){
+								typeof callback != 'undefined' ? callback(data, status,request) : false;
+							});
+						} else {
+							ajaxHandler.get(baseUrl+model.getRoot()+"/"+model.getId(),null, function(data, status, request){
+								typeof callback != 'undefined' ? callback(data, status,request) : false;
+							});
+						}
+					};
+					
+					this.updateModel = function(model, callback){
+						
+						ajaxHandler.put(baseUrl+model.getRoot()+"/"+model.getId()+model.getEndpoint(),model.getObjectRepresentation(),function(data, status, request){
+							typeof callback != 'undefined' ? callback(data, status,request) : false;
 						});
 					};
 					
-					this.updateModel = function(model){
-						ajaxHandler.put(model.link,model,function(response){
-							return response;
+					this.deleteModel = function(model,callback){
+						var delimiter = "";
+						if (typeof model.getEndpoint === 'function' && model.getEndpoint() != "") {
+							if (model.getId() != "") delimiter = "/"; 
+							ajaxHandler.destroy(baseUrl+model.getRoot()+delimiter+model.getId()+model.getEndpoint(),null, function(data, status, request){
+								typeof callback != 'undefined' ? callback(data, status,request) : false;
+							});
+						} else {
+							ajaxHandler.destroy(baseUrl+model.getRoot()+"/"+model.getId(),null, function(data, status, request){
+								typeof callback != 'undefined' ? callback(data, status,request) : false;
+							});
+						}
+					};
+					
+					this.postCollection = function(collection, callback){
+						ajaxHandler.post(baseUrl+collection.getRoot(), collection.getCollection(), function(response){
+							typeof callback != 'undefined' ? callback(response) : false;
 						});
 					};
 					
-					this.deleteModel = function(model){
-						ajaxHandler.destroy(model.link, function(response){
-							return response;
-						});
-					};
-					
-					this.postCollection = function(collection){
-						ajaxHandler.post(collection.getUrlRoot(), collection, function(response){
-							return response;
-						});
-					};
-					
-					this.fetchCollection = function(collection) {
-						ajaxHandler.get(collection.getUrlRoot(), function(response){
-							return response;
+					this.fetchCollection = function(collection, callback) {
+						ajaxHandler.get(baseUrl+collection.getRoot(),null, function(data, status, request){
+							typeof callback != 'undefined' ? callback(self.createResponseObject(status,data)) : false;
 						});
 					};
 					
@@ -798,20 +939,20 @@ var SMVP = (function(){
 			})(),
 
 /**
- * Helper
+ * Util
  */
-			Helper : (function(){
+			Util : (function(){
 				
 				/**
 				 * @constructor
 				 */
-				function Helper(){
+				function Util(){
 					String.prototype.ucfirst = function(){
 						return this.charAt(0).toUpperCase() + this.substr(1);
 					};	
 				};
 				
-				Helper.prototype.uuid = function() {
+				Util.prototype.uuid = function() {
 					var d = new Date().getTime();
 				    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 				        var r = (d + Math.random()*16)%16 | 0;
@@ -821,7 +962,7 @@ var SMVP = (function(){
 				    return uuid;
 				};
 				
-				return Helper;
+				return Util;
 			})(),
 
 /**
@@ -834,23 +975,32 @@ var SMVP = (function(){
 				 */
 				function AjaxHandler(){
 					
-					this.executeRequest = function(type,url,callback,data){
+					this.executeRequest = function(type,url,data,callback){
 						var json = null;
-						if(typeof data !='undefined'){
+						if(typeof data !='undefined' && data != null){
 							json = JSON.stringify(data);
 						}
-						
+						var cookieValue = "";
+						var nameEQ = "tokenString" + "=";
+					    var ca = document.cookie.split(';');
+					    for(var i=0;i < ca.length;i++) {
+					        var c = ca[i];
+					        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+					        if (c.indexOf(nameEQ) == 0) cookieValue =  c.substring(nameEQ.length,c.length);
+					    }
+					    
 						$.ajax({
 							type 		: type,
 							dataType 	: "json",
 							contentType : 'application/json',
 							data 		: json,
 							url 		: url,
-							success 	: function(data) {
-								callback(data);
+							beforeSend: function(xhr){xhr.setRequestHeader('token', cookieValue);},
+							success 	: function(data, status,request) {
+								callback(data,status,request);
 							},
-							error 		: function(xhr){
-						        alert('Request Status: ' + xhr.status + ' Status Text: ' + xhr.statusText + ' ' + xhr.responseText);
+							error 		: function(data,status,request){
+								callback(data,status,request);
 							},
 							complete : function(data) {	
 							}
@@ -859,24 +1009,56 @@ var SMVP = (function(){
 				}
 				
 				AjaxHandler.prototype.post = function(url,data,callback){
-					this.executeRequest("POST", url,callback,data);
+					this.executeRequest("POST", url, data, function(data,status,request){
+						callback(data,status,request);
+					});
 				};
 				
-				AjaxHandler.prototype.get = function(url,callback){
-					this.executeRequest("GET", url,callback);
+				AjaxHandler.prototype.get = function(url,data,callback){
+					this.executeRequest("GET", url, data, function(data,status,request){
+						callback(data,status,request);
+					});
 				};
 				AjaxHandler.prototype.put = function(url,data,callback){
-					this.executeRequest("PUT", url,callback,data);
+					this.executeRequest("PUT",  url, data, function(data,status,request){
+						callback(data,status,request);
+					});
 				};
-				AjaxHandler.prototype.destroy = function(url,callback){
-					this.executeRequest("DELETE", url, callback);
+				AjaxHandler.prototype.destroy = function(url,data,callback){
+					
+					var cookieValue = "";
+					var nameEQ = "tokenString" + "=";
+				    var ca = document.cookie.split(';');
+				    for(var i=0;i < ca.length;i++) {
+				        var c = ca[i];
+				        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+				        if (c.indexOf(nameEQ) == 0) cookieValue =  c.substring(nameEQ.length,c.length);
+				    }
+					
+					$.ajax({
+						type 		: "DELETE",
+					
+						url 		: url,
+						beforeSend: function(xhr){xhr.setRequestHeader('token', cookieValue);},
+						success 	: function(data, status,request) {
+							callback(data,status,request);
+						},
+						error 		: function(data,status,request){
+					        //alert('Request Status: ' + xhr.status + ' Status Text: ' + xhr.statusText + ' ' + xhr.responseText);
+							callback(data,status,request);
+						},
+						complete : function(data) {	
+						}
+					});
+					
+					
 				};
 				
 				return AjaxHandler;
 			})()
 	}
 	
-	var _helper = new API.Helper();
+	var _util = new API.Util();
 	
 	return API;
 })();
